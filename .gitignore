@@ -1,0 +1,9 @@
+# Documents internes, non publiés
+/SPEC.md
+/PAIEMENT-COMPTA.md
+/CLAUDE.md
+/.claude/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
