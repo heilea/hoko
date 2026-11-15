@@ -1,6 +1,36 @@
 "use server";
 
+import { redirect } from "next/navigation";
+import { verifierIdentifiants } from "@/lib/accounts";
 import { getListingPhone, getProPhone } from "@/lib/data";
+import { connexionDisponible, fermerSession, ouvrirSession } from "@/lib/session";
+
+export type EtatConnexion = { erreur?: string; email?: string };
+
+/**
+ * Connexion d'un annonceur. Le message d'erreur est le même que l'e-mail soit inconnu
+ * ou le mot de passe faux, pour ne pas révéler quels comptes existent.
+ *
+ * À faire avec la vraie gestion des comptes : limiter le nombre d'essais.
+ */
+export async function seConnecter(_precedent: EtatConnexion, formulaire: FormData): Promise<EtatConnexion> {
+  const email = String(formulaire.get("email") ?? "").slice(0, 200);
+  const motDePasse = String(formulaire.get("motDePasse") ?? "").slice(0, 200);
+
+  if (!email.trim() || !motDePasse) return { erreur: "Saisissez votre e-mail et votre mot de passe.", email };
+  if (!connexionDisponible()) return { erreur: "La connexion est indisponible pour le moment. Réessayez plus tard.", email };
+
+  const compte = verifierIdentifiants(email, motDePasse);
+  if (!compte) return { erreur: "E-mail ou mot de passe incorrect.", email };
+
+  await ouvrirSession(compte.id);
+  redirect("/compte");
+}
+
+export async function seDeconnecter(): Promise<void> {
+  await fermerSession();
+  redirect("/");
+}
 import { validerAnnonce, type AnnonceSaisie, type AnnonceValide, type ChampAnnonce } from "@/lib/validation";
 
 export type EtatDepot =

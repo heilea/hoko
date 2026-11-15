@@ -127,7 +127,7 @@ const listings: Listing[] = [
     ile: "Tahiti",
     publiee: "hier",
     boost: false,
-    vendeur: "Moana",
+    vendeur: "Teva",
   },
   {
     id: "5",

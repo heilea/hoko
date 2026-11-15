@@ -20,6 +20,8 @@
   --soleil-ink: #2b1b28;
   --flamme: var(--tiger-flame);
   --erreur: #b3261e;
+  --succes: #1e6b3c;
+  --attente: #7a4d00;
   --font-display: var(--font-clash), system-ui, sans-serif;
   --font-body: var(--font-satoshi), system-ui, sans-serif;
   color-scheme: light;
@@ -300,11 +302,76 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 .details .description { font-weight: 400; }
 .infos-nues { border-top: 0; padding-top: 0; }
 
+/* Connexion */
+.connexion { display: grid; gap: 20px; max-width: 440px; margin: 0 auto; padding-block: 24px; }
+.champ input[type="email"], .champ input[type="password"] {
+  width: 100%; min-height: 44px; padding: 10px 12px;
+  font: 400 16px/24px var(--font-body); color: var(--ink);
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+}
+.demo { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.demo code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+
+/* Espace annonceur */
+.compte { display: grid; gap: 32px; grid-template-columns: 220px minmax(0, 1fr); align-items: start; }
+.compte-cote { display: grid; gap: 16px; position: sticky; top: 16px; }
+.compte-qui { display: grid; gap: 2px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.compte-qui strong { font: 700 18px/24px var(--font-display); overflow-wrap: anywhere; }
+.compte-nav { display: grid; gap: 4px; }
+.compte-nav a, .compte-nav button {
+  display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0 12px; border-radius: 8px;
+  font: 500 16px/24px var(--font-body); color: var(--ink); text-decoration: none; text-align: left;
+  background: none; border: 0; cursor: pointer;
+}
+.compte-nav a:hover, .compte-nav button:hover { background: var(--sunken); }
+.compte-nav a[aria-current="page"] { background: var(--marque); color: var(--marque-ink); font-weight: 700; }
+.compte-nav form { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
+.compte-nav button { color: var(--muted); }
+.compte-contenu { gap: 24px; }
+
+.chiffres { margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.chiffres > div { display: grid; gap: 4px; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.chiffres dt { color: var(--muted); font-size: 14px; line-height: 20px; }
+.chiffres dd { margin: 0; font: 900 32px/38px var(--font-body); font-variant-numeric: tabular-nums; }
+.chiffres .suffixe { font-size: 16px; font-weight: 500; color: var(--muted); }
+
+.carte { display: grid; gap: 12px; justify-items: start; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.carte > * { max-width: 100%; }
+.carte .section-head, .carte .details { width: 100%; }
+.details-nus { border-top: 0; padding-top: 0; }
+.details .ligne { display: block; }
+.bouton-seul { justify-self: start; }
+
+.suivis { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.suivi {
+  display: grid; gap: 12px 24px; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+  border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+}
+.suivi-corps { display: grid; gap: 6px; min-width: 0; }
+.suivi-corps h3 { overflow-wrap: anywhere; }
+.suivi-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.suivi-chiffres { margin: 0; grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 32px; border-top: 1px solid var(--border); padding-top: 12px; }
+.suivi-chiffres dt { color: var(--muted); }
+.suivi-chiffres dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.suivi-lien { grid-column: 2; grid-row: 1; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.suivi-lien svg { width: 16px; height: 16px; }
+.badge-statut { border: 1px solid currentColor; background: var(--bg); }
+.statut-active { color: var(--succes); }
+.statut-en_attente_validation { color: var(--attente); }
+.statut-refusee { color: var(--erreur); }
+.badge-attente { background: #fbefd0; color: var(--attente); }
+
 /* Pages à venir et page introuvable */
 .vide { display: grid; gap: 16px; justify-items: start; padding-block: 56px; max-width: 60ch; }
 
 @media (max-width: 860px) {
-  .cols { grid-template-columns: minmax(0, 1fr); }
+  .cols, .compte { grid-template-columns: minmax(0, 1fr); }
+  .compte-cote { position: static; }
+  .compte-nav { display: flex; flex-wrap: wrap; }
+  .compte-nav a, .compte-nav button { width: auto; }
+  .compte-nav form { border-top: 0; margin-top: 0; padding-top: 0; }
+  .suivi { grid-template-columns: minmax(0, 1fr); }
+  .suivi-lien { grid-column: 1; grid-row: auto; }
   .porte, .achat { position: static; }
 }
 @media (max-width: 640px) {

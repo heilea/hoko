@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { getSession } from "@/lib/session";
 import { Icon } from "./Icon";
 
 export function Header() {
@@ -24,9 +26,10 @@ export function Header() {
             </button>
           </form>
           <div className="actions">
-            <Link className="btn btn-secondary" href="/connexion">
-              Connexion
-            </Link>
+            {/* Le lien dépend de la session, connue seulement à la requête */}
+            <Suspense fallback={<LienConnexion />}>
+              <LienCompte />
+            </Suspense>
             <Link className="btn btn-primary" href="/publier">
               Publier
             </Link>
@@ -34,5 +37,23 @@ export function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function LienConnexion() {
+  return (
+    <Link className="btn btn-secondary" href="/connexion">
+      Connexion
+    </Link>
+  );
+}
+
+async function LienCompte() {
+  const compte = await getSession();
+  if (!compte) return <LienConnexion />;
+  return (
+    <Link className="btn btn-secondary" href="/compte">
+      Mon compte
+    </Link>
   );
 }
