@@ -53,7 +53,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 | Fonction | État | Règle |
 |---|---|---|
-| Accueil : recherche, catégories, annonces récentes, pros mis en avant | ✅ | — |
+| Accueil : recherche, catégories, annonces de particuliers, pros mis en avant | 🟡 | Aujourd'hui l'accueil liste **toutes** les annonces dans l'ordre du fichier de données, sans tri par date ni limite (voir 3.1.1) |
 | Pages de catégorie | ✅ | Les annonces boostées passent en tête |
 | Recherche par mot-clé | ✅ | Insensible aux accents et à la casse. Ne renvoie **pas** les annonces pro |
 | Page d'annonce | 🟡 | Titre, prix, description, lieu, date, vendeur, annonces similaires. Photos : emplacement vide tant que l'envoi n'existe pas |
@@ -62,6 +62,14 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Vitrine d'un pro | ✅ | Présentation, horaires, téléphone, annonces |
 | Filtres avancés (île, prix, tri) | ⬜ | [Proposé] V1.1 |
 | Signaler une annonce | ⬜ | [Proposé] V1 : indispensable dès que le trafic grandit |
+
+#### 3.1.1 Annonces de l'accueil [Proposé]
+
+- **Tri** : de la plus récente à la plus ancienne, sur une vraie date de publication enregistrée en base (le champ texte `publiee`, du type « hier », est remplacé par une date, et le libellé est calculé à l'affichage).
+- **Limite** : un nombre fixe d'annonces par page (12 ou 24, **[À décider]**), avec « Voir plus » ou pagination. Aujourd'hui tout s'affiche d'un coup.
+- **Boost** : **[À décider]** si les annonces boostées passent en tête de l'accueil, comme dans leur catégorie. La règle écrite ne l'exige que pour la catégorie.
+- **Exclusions** : les annonces pro n'y figurent pas, comme dans la recherche et les catégories ; les annonces `en attente de validation`, `refusée`, `vendue` ou `expirée` n'y figurent pas non plus.
+- **Recherche** : le tri par date s'applique aussi aux résultats, sauf si un tri par pertinence est choisi plus tard.
 
 ### 3.2 Côté annonceur
 
@@ -269,6 +277,7 @@ Classés par urgence : les premiers bloquent la phase 1.
 | 7 | Procédure de vérification d'un pro (justificatifs TAHITI) | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |
 | 9 | Niveau de disponibilité visé et région Supabase / Vercel (après mesure de latence depuis Tahiti) | Coût et latence |
+| 9bis | Annonces de l'accueil : nombre par page et priorité au boost (3.1.1) | Requête et pagination |
 | 10 | Nom de domaine et exploitant légal du site | Mentions légales, et **bloque l'envoi d'e-mails** (SPF, DKIM de Resend) |
 
 ---
