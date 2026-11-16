@@ -169,7 +169,7 @@ Contenus interdits à lister (armes, produits illicites, annonces trompeuses, et
 
 ### 7.1 Sécurité
 
-- **Mots de passe** : hachés (algorithme moderne type argon2 ou bcrypt), jamais en clair. Les mots de passe de démonstration actuels dans `accounts.ts` **doivent disparaître** avant toute mise en ligne.
+- **Mots de passe** : gérés par Supabase Auth, qui les hache. Jamais en clair. Les mots de passe de démonstration actuels dans `accounts.ts` **doivent disparaître** avant toute mise en ligne.
 - **Session** : cookie `httpOnly`, `sameSite=lax`, `secure` en production, signé avec `SESSION_SECRET`. **Sans cette variable, la connexion est désactivée en production** [Acquis].
 - **Connexion** : même message d'erreur pour e-mail inconnu et mot de passe faux [Acquis] ; **limite d'essais à ajouter**.
 - **Envoi de photos** : vérifier le type réel du fichier (pas seulement l'extension), retirer les métadonnées (position GPS), stocker hors du serveur applicatif.
@@ -194,17 +194,24 @@ Hoko traite des noms, numéros de téléphone et e-mails de résidents polynési
 - Tests **Vitest** dans `web/tests/` (annonces, comptes, dépôt).
 - Polices Clash Display et Satoshi (fichiers locaux). Maquettes HTML dans `maquettes/`.
 
-### 8.2 À choisir [À décider]
+### 8.2 Choix technologiques
+
+**Décidés [Acquis]**
+
+| Sujet | Choix | Conséquences |
+|---|---|---|
+| Base de données | **Supabase** (PostgreSQL) | Formule payante obligatoire en production (la formule gratuite se met en pause). Activer la sécurité par ligne (RLS) pour que chaque annonceur ne voie que ses annonces. Choisir la région après mesure de la latence depuis Tahiti |
+| Authentification | **Supabase Auth** | Remplace `session.ts`, `session-token.ts` et les comptes de démonstration de `accounts.ts`, via `@supabase/ssr`. Régler la limite d'essais de connexion, brancher un service SMTP pour les e-mails de production et vérifier la compatibilité avec Next.js 16 |
+| Stockage des photos | **Supabase Storage** | Règles d'accès par bucket. Le retrait des métadonnées GPS et le redimensionnement restent à écrire (le redimensionnement automatique dépend de la formule) |
+| Hébergement du site | **Vercel** | Prix lié au trafic ; la formule gratuite interdit l'usage commercial. Placer le site dans la même région que Supabase, choisie après mesure de la latence depuis Tahiti (côte ouest des États-Unis ou Sydney) |
+| E-mails | **Resend**, branché en SMTP sur Supabase Auth | Sert à la réinitialisation du mot de passe, à la validation d'annonce et au rappel d'expiration. Exige un nom de domaine avec SPF et DKIM configurés, sinon les e-mails arrivent en courrier indésirable |
+| Recherche | **PostgreSQL (Supabase)** au départ | Recherche plein texte en français, extension `unaccent` (insensible aux accents), `pg_trgm` (tolère les fautes) et index. Les annonces pro restent exclues. Passer à Typesense ou Meilisearch si le volume ou les attentes l'exigent |
+
+**À choisir [À décider]**
 
 | Sujet | Options à comparer |
 |---|---|
-| Base de données | PostgreSQL (Supabase, Neon, serveur propre) |
-| Authentification | Solution gérée (Supabase Auth, Clerk, Auth.js) ou maison |
-| Stockage des photos | Stockage objet avec CDN, redimensionnement automatique |
 | Paiement | Solution acceptant le XPF, ou paiement en euros converti ; virement / paiement en agence pour la pub |
-| Hébergement | Vercel ou serveur ; **latence depuis le Pacifique** à mesurer |
-| E-mails | Service transactionnel (confirmation, rappel d'expiration, validation) |
-| Recherche | Recherche SQL au début, moteur dédié si le volume le demande |
 
 ### 8.3 Modèle de données cible [Proposé]
 
@@ -253,7 +260,7 @@ Classés par urgence : les premiers bloquent la phase 1.
 
 | # | Question | Pourquoi c'est bloquant |
 |---|---|---|
-| 1 | Fournisseur de base de données et d'authentification | Rien n'est enregistré sans |
+| 1 | ~~Base de données, authentification et photos~~ : **décidé** (Supabase). Hébergement (Vercel), e-mail (Resend) et recherche (PostgreSQL) sont aussi décidés | Rien n'est enregistré sans |
 | 2 | Îles et catégories couvertes en V1 | Structure des filtres et du SEO |
 | 3 | Nombre de photos par annonce (6 proposé) | Stockage et formulaire |
 | 4 | Durée de vie d'une annonce et règles d'expiration | Modèle de données |
@@ -261,8 +268,8 @@ Classés par urgence : les premiers bloquent la phase 1.
 | 6 | Prix du boost et de la publicité ; moyens de paiement | Phase 3 |
 | 7 | Procédure de vérification d'un pro (justificatifs TAHITI) | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |
-| 9 | Hébergement et niveau de disponibilité visé | Coût et latence |
-| 10 | Nom de domaine et exploitant légal du site | Mentions légales |
+| 9 | Niveau de disponibilité visé et région Supabase / Vercel (après mesure de latence depuis Tahiti) | Coût et latence |
+| 10 | Nom de domaine et exploitant légal du site | Mentions légales, et **bloque l'envoi d'e-mails** (SPF, DKIM de Resend) |
 
 ---
 
