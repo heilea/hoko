@@ -65,11 +65,11 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Filtres avancés (prix, tri) | ⬜ | [Proposé] V1.1 |
 | Signaler une annonce | ⬜ | [Proposé] V1 : indispensable dès que le trafic grandit |
 
-#### 3.1.1 Annonces de l'accueil [Proposé]
+#### 3.1.1 Annonces de l'accueil [Acquis]
 
 - **Tri** : de la plus récente à la plus ancienne, sur une vraie date de publication enregistrée en base (le champ texte `publiee`, du type « hier », est remplacé par une date, et le libellé est calculé à l'affichage).
-- **Limite** : un nombre fixe d'annonces par page (12 ou 24, **[À décider]**), avec « Voir plus » ou pagination. Aujourd'hui tout s'affiche d'un coup.
-- **Boost** : **[À décider]** si les annonces boostées passent en tête de l'accueil, comme dans leur catégorie. La règle écrite ne l'exige que pour la catégorie.
+- **Limite** : 10 à 12 annonces par page (nombre exact à fixer à la construction), avec la pagination décrite en 5.9. Aujourd'hui tout s'affiche d'un coup.
+- **Boost** : il ne change pas l'ordre de l'accueil, trié uniquement par date de création. Une annonce boostée ne passe en tête que dans sa catégorie.
 - **Exclusions** : les annonces pro n'y figurent pas, comme dans la recherche et les catégories ; les annonces `en attente de validation`, `refusée`, `vendue` ou `expirée` n'y figurent pas non plus.
 - **Recherche** : le tri par date s'applique aussi aux résultats, sauf si un tri par pertinence est choisi plus tard.
 
@@ -198,7 +198,7 @@ Gratuite, réservée aux annonceurs : un acheteur n'a pas besoin de compte.
 
 ### 5.9 Pagination des listes [Acquis, pas encore construite]
 
-Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirmer], annonces boostées en tête de la première page seulement, pas de défilement infini. L'accueil ne montre que les 10 à 12 annonces les plus récentes.
+Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirmer], annonces boostées en tête de la première page de leur catégorie seulement, pas de défilement infini. L'accueil affiche 10 à 12 annonces par page, triées par date de création (3.1.1).
 
 ---
 
@@ -313,7 +313,6 @@ Classés par urgence : les premiers bloquent la phase 1. Les choix techniques so
 | 7 | Procédure de vérification d'un pro (justificatifs TAHITI) | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |
 | 9 | Niveau de disponibilité visé et région Supabase / Vercel (après mesure de latence depuis Tahiti) | Coût et latence |
-| 9bis | Annonces de l'accueil : nombre par page et priorité au boost (3.1.1) | Requête et pagination |
 | 10 | Nom de domaine et exploitant légal du site | Mentions légales, et **bloque l'envoi d'e-mails** (SPF, DKIM de Resend) |
 
 ---
