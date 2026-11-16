@@ -89,6 +89,11 @@ export function verifierIdentifiants(email: string, motDePasse: string): Account
   return sansMotDePasse(compte);
 }
 
+/** Indique si un compte existe déjà avec cet e-mail (un seul compte par e-mail). */
+export function emailDejaUtilise(email: string): boolean {
+  return comptes.some((c) => c.email === email.trim().toLowerCase());
+}
+
 /** Comptes proposés sur la page de connexion de la démonstration. */
 export function getComptesDemo(): { type: Account["type"]; email: string; motDePasse: string }[] {
   return comptes.map((c) => ({ type: c.type, email: c.email, motDePasse: c.motDePasseDemo }));

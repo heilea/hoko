@@ -31,6 +31,52 @@ export async function seDeconnecter(): Promise<void> {
   await fermerSession();
   redirect("/");
 }
+
+export type EtatInscription =
+  | { statut: "initial" }
+  | { statut: "erreurs"; erreurs: Partial<Record<ChampInscription, string>>; saisie: InscriptionRenvoyee }
+  | { statut: "valide"; compte: InscriptionValide };
+
+/**
+ * Reçoit le formulaire d'inscription et le vérifie côté serveur.
+ *
+ * Tant qu'il n'y a pas de base de données, le compte n'est PAS créé : l'inscription valide est
+ * renvoyée pour le récapitulatif, et la page le dit clairement. Les mots de passe ne sont
+ * jamais renvoyés au navigateur ni gardés.
+ * À faire avec la vraie gestion des comptes : hacher le mot de passe, enregistrer le compte,
+ * confirmer l'e-mail par un lien, limiter le nombre d'inscriptions par visiteur. Le message
+ * « un compte existe déjà » révèle qu'un e-mail est inscrit : à revoir à ce moment-là.
+ */
+export async function sInscrire(_precedent: EtatInscription, formulaire: FormData): Promise<EtatInscription> {
+  const texte = (champ: string) => {
+    const valeur = formulaire.get(champ);
+    return typeof valeur === "string" ? valeur.slice(0, 500) : "";
+  };
+  const renvoyee: InscriptionRenvoyee = {
+    type: texte("type"),
+    nom: texte("nom"),
+    email: texte("email"),
+    telephone: texte("telephone"),
+    numeroTahiti: texte("numeroTahiti"),
+    secteur: texte("secteur"),
+    ile: texte("ile"),
+    commune: texte("commune"),
+  };
+  const resultat = validerInscription(
+    { ...renvoyee, motDePasse: texte("motDePasse"), confirmation: texte("confirmation") },
+    emailDejaUtilise,
+  );
+  if (!resultat.ok) return { statut: "erreurs", erreurs: resultat.erreurs, saisie: renvoyee };
+  return { statut: "valide", compte: resultat.compte };
+}
+
+import { emailDejaUtilise } from "@/lib/accounts";
+import {
+  validerInscription,
+  type ChampInscription,
+  type InscriptionRenvoyee,
+  type InscriptionValide,
+} from "@/lib/inscription";
 import { validerAnnonce, type AnnonceSaisie, type AnnonceValide, type ChampAnnonce } from "@/lib/validation";
 
 export type EtatDepot =
