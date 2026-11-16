@@ -2,14 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Icon } from "@/components/Icon";
-import {
-  getCategory,
-  getProCategories,
-  getProListings,
-  getProsByCategory,
-  getVerifiedPros,
-  MAX_ANNONCES_PRO,
-} from "@/lib/data";
+import { getProCategorySlugs, getProListings, getProsByCategory, getVerifiedPros } from "@/lib/annonces-donnees";
+import { getCategory, MAX_ANNONCES_PRO } from "@/lib/data";
 import { prixXpf, sigle } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -31,7 +25,7 @@ export default function ProsPage({ searchParams }: PageProps<"/pros">) {
       </section>
 
       {/* Le filtre par secteur vient de l'URL : il n'est connu qu'à la requête, d'où le Suspense */}
-      <Suspense fallback={<Annuaire enAttente />}>
+      <Suspense fallback={<AnnuaireChargement />}>
         <AnnuaireFiltre searchParams={searchParams} />
       </Suspense>
 
@@ -77,17 +71,31 @@ async function AnnuaireFiltre({ searchParams }: { searchParams: Recherche }) {
   return <Annuaire secteur={Array.isArray(secteur) ? secteur[0] : secteur} />;
 }
 
-/** Filtres par secteur et grille des pros. `enAttente` : la grille attend le filtre demandé. */
-function Annuaire({ secteur, enAttente = false }: { secteur?: string; enAttente?: boolean }) {
-  const filtres = getProCategories();
+/** En attendant le filtre demandé dans l'adresse */
+function AnnuaireChargement() {
+  return (
+    <section className="band">
+      <div className="wrap">
+        <p className="muted" role="status">
+          Chargement des pros…
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/** Filtres par secteur et grille des pros. */
+async function Annuaire({ secteur }: { secteur?: string }) {
+  const filtres = (await getProCategorySlugs()).flatMap((slug) => getCategory(slug) ?? []);
   const active = filtres.find((c) => c.slug === secteur);
-  const pros = enAttente ? [] : active ? getProsByCategory(active.slug) : getVerifiedPros();
+  const pros = active ? await getProsByCategory(active.slug) : await getVerifiedPros();
+  const nombres = await Promise.all(pros.map(async (pro) => (await getProListings(pro.slug)).length));
 
   return (
     <section className="band">
       <div className="wrap stack">
         <nav className="secteurs" aria-label="Filtrer par secteur">
-          <Link className="secteur" href="/pros" aria-current={!active && !enAttente ? "true" : undefined}>
+          <Link className="secteur" href="/pros" aria-current={!active ? "true" : undefined}>
             Tous les pros
           </Link>
           {filtres.map((c) => (
@@ -103,10 +111,12 @@ function Annuaire({ secteur, enAttente = false }: { secteur?: string; enAttente?
           ))}
         </nav>
 
-        {enAttente ? (
-          <p className="muted" role="status">
-            Chargement des pros…
-          </p>
+        {pros.length === 0 ? (
+          <div className="empty">
+            <p>
+              <strong>Aucun pro vérifié pour l&apos;instant.</strong>
+            </p>
+          </div>
         ) : (
           <>
             <p className="small muted">
@@ -114,8 +124,8 @@ function Annuaire({ secteur, enAttente = false }: { secteur?: string; enAttente?
               {active ? ` en ${active.nom}` : ""}
             </p>
             <div className="pros-grille">
-              {pros.map((pro) => {
-                const nombre = getProListings(pro.slug).length;
+              {pros.map((pro, rang) => {
+                const nombre = nombres[rang];
                 return (
                   <Link key={pro.slug} className="pro-carte" href={`/pros/${pro.slug}`}>
                     <span className="sigle" aria-hidden="true">

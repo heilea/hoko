@@ -11,7 +11,7 @@ const liens = [
 ];
 
 /** Menu de l'espace annonceur, avec la page en cours mise en évidence. */
-export function AccountNav() {
+export function AccountNav({ admin = false }: { admin?: boolean }) {
   const chemin = usePathname();
   return (
     <nav className="compte-nav" aria-label="Mon compte">
@@ -20,6 +20,7 @@ export function AccountNav() {
           {lien.libelle}
         </Link>
       ))}
+      {admin && <Link href="/admin">Administration</Link>}
       <form action={seDeconnecter}>
         <button type="submit">Se déconnecter</button>
       </form>

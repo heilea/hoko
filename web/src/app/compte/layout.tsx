@@ -44,7 +44,7 @@ async function Garde({ children }: { children: React.ReactNode }) {
           <strong>{compte.nom}</strong>
           <span className="small muted">{compte.type === "pro" ? "Compte professionnel" : "Compte particulier"}</span>
         </div>
-        <AccountNav />
+        <AccountNav admin={compte.admin} />
       </div>
       <div className="stack compte-contenu">{children}</div>
     </div>

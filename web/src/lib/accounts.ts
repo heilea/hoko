@@ -19,6 +19,8 @@ export type Account = {
   telephone: string;
   /** Adresse de la vitrine du pro. */
   shopId?: string;
+  /** Administrateur de Hoko : valide les annonces (espace /admin). */
+  admin: boolean;
 };
 
 export type StatutAnnonce = "active" | "en_attente_validation" | "refusee" | "retiree";
@@ -38,6 +40,8 @@ export type AccountListing = {
   contacts: number;
   /** Page publique de l'annonce, si elle est en ligne. */
   lien?: string;
+  /** Raison donnée par l'administrateur, pour une annonce refusée. */
+  motif?: string;
 };
 
 /** La vitrine d'un pro, telle qu'il la voit dans son espace. */
@@ -57,7 +61,7 @@ export type Vitrine = {
 };
 
 /** Une ligne de la table `listings` (types générés), avec le slug de sa catégorie. */
-export type LigneAnnonce = Pick<Tables<"listings">, "id" | "titre" | "prix_xpf" | "statut" | "boost_jusqu_au"> & {
+export type LigneAnnonce = Pick<Tables<"listings">, "id" | "titre" | "prix_xpf" | "statut" | "boost_jusqu_au" | "motif_refus"> & {
   categories: Pick<Tables<"categories">, "slug"> | null;
 };
 
@@ -92,6 +96,7 @@ export function versSuivi(ligne: LigneAnnonce, maintenant: number): AccountListi
     vues: 0,
     contacts: 0,
     lien: statut === "active" ? `/annonces/${id}` : undefined,
+    motif: statut === "refusee" ? (ligne.motif_refus ?? undefined) : undefined,
   };
 }
 

@@ -4,7 +4,7 @@ import { CategoryNav } from "@/components/CategoryNav";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
 import { ProDirectory } from "@/components/ProDirectory";
-import { searchListings } from "@/lib/data";
+import { searchListings } from "@/lib/annonces-donnees";
 import { prixXpf } from "@/lib/format";
 
 type Recherche = PageProps<"/">["searchParams"];
@@ -38,7 +38,7 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
       <section className="band band-suite">
         <div className="wrap cols">
           {/* La recherche vient de l'URL : elle n'est connue qu'à la requête, d'où le Suspense */}
-          <Suspense fallback={<Annonces enAttente />}>
+          <Suspense fallback={<AnnoncesChargement />}>
             <AnnoncesRecherchees searchParams={searchParams} />
           </Suspense>
           <ProDirectory />
@@ -71,12 +71,23 @@ async function AnnoncesRecherchees({ searchParams }: { searchParams: Recherche }
   return <Annonces q={recherche} />;
 }
 
-/**
- * Liste des annonces de particuliers. `enAttente` sert d'état de chargement : le titre est là,
- * mais la liste attend la recherche pour ne pas montrer des annonces non filtrées.
- */
-function Annonces({ q, enAttente = false }: { q?: string; enAttente?: boolean }) {
-  const annonces = enAttente ? [] : searchListings(q);
+/** En attendant la recherche : le titre est là, mais pas encore d'annonces non filtrées. */
+function AnnoncesChargement() {
+  return (
+    <div className="stack" id="annonces">
+      <div className="section-head">
+        <h2>Annonces de particuliers</h2>
+      </div>
+      <p className="muted" role="status">
+        Chargement des annonces…
+      </p>
+    </div>
+  );
+}
+
+/** Liste des annonces de particuliers, filtrée par la recherche s'il y en a une. */
+async function Annonces({ q }: { q?: string }) {
+  const annonces = await searchListings(q);
 
   return (
     <div className="stack" id="annonces">
@@ -88,11 +99,7 @@ function Annonces({ q, enAttente = false }: { q?: string; enAttente?: boolean })
           </span>
         )}
       </div>
-      {enAttente ? (
-        <p className="muted" role="status">
-          Chargement des annonces…
-        </p>
-      ) : annonces.length > 0 ? (
+      {annonces.length > 0 ? (
         <div className="liste">
           {annonces.map((annonce) => (
             <ListingCard key={annonce.id} annonce={annonce} sansBoost />
@@ -101,11 +108,17 @@ function Annonces({ q, enAttente = false }: { q?: string; enAttente?: boolean })
       ) : (
         <div className="empty">
           <p>
-            <strong>Aucune annonce trouvée.</strong>
+            <strong>{q ? "Aucune annonce trouvée." : "Aucune annonce pour l'instant."}</strong>
           </p>
-          <Link className="btn btn-secondary" href="/">
-            Tout afficher
-          </Link>
+          {q ? (
+            <Link className="btn btn-secondary" href="/">
+              Tout afficher
+            </Link>
+          ) : (
+            <Link className="btn btn-primary" href="/publier">
+              Publier la première
+            </Link>
+          )}
         </div>
       )}
     </div>

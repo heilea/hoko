@@ -5,19 +5,15 @@ import { Suspense } from "react";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
 import { RevealPhone } from "@/components/RevealPhone";
-import { getCategory, getListing, getListingIds, getPro, getRelatedListings } from "@/lib/data";
+import { getListing, getPro, getRelatedListings } from "@/lib/annonces-donnees";
+import { getCategory } from "@/lib/data";
 import { prixXpf, sigle } from "@/lib/format";
 
 type Props = PageProps<"/annonces/[id]">;
 
-// Les annonces connues sont pré-rendues à la construction du site.
-export function generateStaticParams() {
-  return getListingIds().map((id) => ({ id }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const annonce = getListing(id);
+  const annonce = await getListing(id);
   if (!annonce) return { title: "Annonce introuvable" };
   return {
     title: annonce.titre,
@@ -48,13 +44,13 @@ export default function ListingPage({ params }: Props) {
 
 async function Fiche({ params }: Pick<Props, "params">) {
   const { id } = await params;
-  const annonce = getListing(id);
+  const annonce = await getListing(id);
   if (!annonce) notFound();
 
   const categorie = getCategory(annonce.categorie);
-  const autres = getRelatedListings(annonce);
+  const autres = await getRelatedListings(annonce);
   // Annonce pro : elle appartient à une vitrine et renvoie vers elle, pas vers les catégories de particuliers
-  const pro = annonce.shopId ? getPro(annonce.shopId) : undefined;
+  const pro = annonce.shopId ? await getPro(annonce.shopId) : undefined;
 
   return (
     <>
