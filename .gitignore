@@ -7,3 +7,4 @@
 # Fichiers système
 .DS_Store
 Thumbs.db
+/.mcp.json

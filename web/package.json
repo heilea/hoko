@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "supabase:verifier": "node --env-file=.env.local scripts/verifier-supabase.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
