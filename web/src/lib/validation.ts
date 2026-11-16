@@ -19,7 +19,7 @@ export const PHOTO_POIDS_MAX = 4 * 1024 * 1024;
 export const PHOTOS_MAX = 6;
 
 export type ChampAnnonce =
-  | "titre" | "categorie" | "prix" | "description" | "ile" | "commune" | "telephone" | "accord";
+  | "titre" | "categorie" | "prix" | "description" | "ile" | "commune" | "accord";
 
 export type AnnonceSaisie = Record<Exclude<ChampAnnonce, "accord">, string> & { accord: boolean };
 
@@ -30,8 +30,6 @@ export type AnnonceValide = {
   description: string;
   ile: string;
   commune: string;
-  /** Numéro au format « 87 12 34 56 ». */
-  telephone: string;
 };
 
 export type ResultatValidation =
@@ -82,14 +80,11 @@ export function validerAnnonce(saisie: AnnonceSaisie): ResultatValidation {
   if (!commune) erreurs.commune = "Indiquez votre commune.";
   else if (commune.length > COMMUNE_MAX) erreurs.commune = `Raccourcissez la commune à ${COMMUNE_MAX} caractères.`;
 
-  const telephone = formaterTelephone(saisie.telephone);
-  if (!saisie.telephone.trim()) erreurs.telephone = "Indiquez votre numéro de téléphone.";
-  else if (telephone === null) erreurs.telephone = "Le numéro doit compter 8 chiffres. Exemple : 87 12 34 56.";
-
+  // Le téléphone est celui du compte : le vendeur accepte qu'il soit affiché au clic
   if (!saisie.accord) erreurs.accord = "Cochez la case pour accepter que votre numéro soit affiché.";
 
-  if (Object.keys(erreurs).length > 0 || prixXpf === null || telephone === null) return { ok: false, erreurs };
-  return { ok: true, annonce: { titre, categorie: saisie.categorie, prixXpf, description, ile: saisie.ile, commune, telephone } };
+  if (Object.keys(erreurs).length > 0 || prixXpf === null) return { ok: false, erreurs };
+  return { ok: true, annonce: { titre, categorie: saisie.categorie, prixXpf, description, ile: saisie.ile, commune } };
 }
 
 /** Vérifie une photo avant l'envoi. Renvoie le message d'erreur, ou null si elle convient. */

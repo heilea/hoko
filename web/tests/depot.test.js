@@ -25,7 +25,6 @@ const saisieValide = {
   description: "Scooter de 2021, toujours entretenu chez le concessionnaire.",
   ile: "Tahiti",
   commune: "Papeete",
-  telephone: "87 12 34 56",
   accord: true,
 };
 
@@ -45,14 +44,13 @@ describe("annonce complète", () => {
       description: saisieValide.description,
       ile: "Tahiti",
       commune: "Papeete",
-      telephone: "87 12 34 56",
     });
   });
 
   test("un formulaire vide signale chaque champ", () => {
-    const erreurs = erreursDe({ titre: "", categorie: "", prix: "", description: "", ile: "", commune: "", telephone: "", accord: false });
+    const erreurs = erreursDe({ titre: "", categorie: "", prix: "", description: "", ile: "", commune: "", accord: false });
     expect(Object.keys(erreurs).sort()).toEqual(
-      ["accord", "categorie", "commune", "description", "ile", "prix", "telephone", "titre"].sort(),
+      ["accord", "categorie", "commune", "description", "ile", "prix", "titre"].sort(),
     );
   });
 });
@@ -123,8 +121,6 @@ describe("téléphone du vendeur", () => {
     expect(formaterTelephone("8712345")).toBeNull();
     expect(formaterTelephone("871234567")).toBeNull();
     expect(formaterTelephone("numéro")).toBeNull();
-    expect(erreursDe({ telephone: "8712345" }).telephone).toBeTruthy();
-    expect(erreursDe({ telephone: "" }).telephone).toBeTruthy();
   });
 
   test("le vendeur doit accepter que son numéro soit affiché", () => {

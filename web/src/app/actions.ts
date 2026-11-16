@@ -13,7 +13,7 @@ import {
 } from "@/lib/inscription";
 import { fermerSession, getSession } from "@/lib/session";
 import { adresseDuSite, creerClientServeur } from "@/lib/supabase-serveur";
-import { validerAnnonce, type AnnonceSaisie, type AnnonceValide, type ChampAnnonce } from "@/lib/validation";
+import { validerAnnonce, type AnnonceSaisie, type ChampAnnonce } from "@/lib/validation";
 
 const INDISPONIBLE = "Ce service est indisponible pour le moment. Réessayez plus tard.";
 const TROP_D_ESSAIS = "Trop d'essais en peu de temps. Patientez quelques minutes avant de réessayer.";
@@ -187,24 +187,18 @@ export async function changerMotDePasse(
 export type EtatDepot =
   | { statut: "initial" }
   | { statut: "limite"; maximum: number }
-  | { statut: "erreurs"; erreurs: Partial<Record<ChampAnnonce, string>>; saisie: AnnonceSaisie }
-  | { statut: "valide"; annonce: AnnonceValide };
+  | { statut: "erreurs"; erreurs: Partial<Record<ChampAnnonce, string>>; saisie: AnnonceSaisie; general?: string }
+  | { statut: "enregistree"; titre: string };
 
 /**
- * Reçoit le formulaire de dépôt d'annonce et le vérifie côté serveur.
+ * Reçoit le formulaire de dépôt d'annonce, le vérifie, puis enregistre l'annonce dans Supabase
+ * avec le statut « en attente de validation ». Elle n'apparaît sur le site qu'après validation
+ * par l'administrateur. Le téléphone est celui du compte, gardé dans une table privée.
  *
- * L'annonce valide n'est PAS encore enregistrée : elle est renvoyée telle quelle pour l'aperçu,
- * et la page le dit clairement. À faire ensuite : exiger un compte, enregistrer l'annonce avec
- * le statut « en attente de validation », puis recevoir les photos.
+ * Réservé aux particuliers connectés : les pros publient depuis leur vitrine.
+ * À faire ensuite : recevoir les photos.
  */
 export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormData): Promise<EtatDepot> {
-  // Un particulier connecté qui a déjà 5 annonces actives ne peut pas en déposer une autre.
-  // Le dépôt n'exige pas encore de compte : la limite ne s'applique donc qu'aux connectés.
-  const compte = await getSession();
-  if (compte?.type === "particulier" && !peutPublier(compte, await getAccountListings(compte))) {
-    return { statut: "limite", maximum: MAX_ANNONCES_PARTICULIER };
-  }
-
   const saisie: AnnonceSaisie = {
     titre: lire(formulaire, "titre", 5000),
     categorie: lire(formulaire, "categorie", 5000),
@@ -212,12 +206,44 @@ export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormDa
     description: lire(formulaire, "description", 5000),
     ile: lire(formulaire, "ile", 5000),
     commune: lire(formulaire, "commune", 5000),
-    telephone: lire(formulaire, "telephone", 5000),
     accord: formulaire.get("accord") === "on",
   };
+
+  // La page cache le formulaire aux visiteurs et aux pros, mais l'action se protège elle-même
+  const compte = await getSession();
+  if (!compte || compte.type !== "particulier") {
+    return { statut: "erreurs", erreurs: {}, saisie, general: "Connectez-vous avec un compte particulier pour publier une annonce." };
+  }
+  // Un particulier qui a déjà 5 annonces actives ne peut pas en déposer une autre
+  if (!peutPublier(compte, await getAccountListings(compte))) return { statut: "limite", maximum: MAX_ANNONCES_PARTICULIER };
+
   const resultat = validerAnnonce(saisie);
   if (!resultat.ok) return { statut: "erreurs", erreurs: resultat.erreurs, saisie };
-  return { statut: "valide", annonce: resultat.annonce };
+  const { annonce } = resultat;
+
+  const supabase = await creerClientServeur();
+  if (!supabase) return { statut: "erreurs", erreurs: {}, saisie, general: INDISPONIBLE };
+
+  const { data: categorie } = await supabase.from("categories").select("id").eq("slug", annonce.categorie).maybeSingle();
+  if (!categorie) return { statut: "erreurs", erreurs: { categorie: "Choisissez une catégorie." }, saisie };
+
+  // Les règles d'accès de la base imposent l'auteur et le statut « en attente de validation »
+  const { error } = await supabase.from("listings").insert({
+    user_id: compte.id,
+    category_id: categorie.id,
+    titre: annonce.titre,
+    description: annonce.description,
+    prix_xpf: annonce.prixXpf,
+    ile: annonce.ile,
+    commune: annonce.commune,
+    vendeur_nom: compte.nom,
+    statut: "en_attente_validation",
+  });
+  if (error) {
+    console.error("Annonce refusée par la base :", error.code);
+    return { statut: "erreurs", erreurs: {}, saisie, general: "L'annonce n'a pas pu être enregistrée. Réessayez dans quelques minutes." };
+  }
+  return { statut: "enregistree", titre: annonce.titre };
 }
 
 // ───────────────────────── Voir le numéro ─────────────────────────

@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Icon } from "@/components/Icon";
 import { PublishForm } from "@/components/PublishForm";
+import { peutPublier } from "@/lib/accounts";
+import { getAccountListings } from "@/lib/compte-donnees";
 import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
+import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Publier une annonce",
@@ -27,7 +31,16 @@ export default function PublishPage() {
           </div>
 
           <div className="cols">
-            <PublishForm />
+            {/* Le formulaire dépend du compte connecté, connu seulement à la requête */}
+            <Suspense
+              fallback={
+                <p className="muted" role="status">
+                  Chargement…
+                </p>
+              }
+            >
+              <Depot />
+            </Suspense>
 
             <aside className="achat" aria-label="Bon à savoir">
               <h2>Bon à savoir</h2>
@@ -73,4 +86,59 @@ export default function PublishPage() {
       </section>
     </main>
   );
+}
+
+/** Le formulaire pour un particulier connecté ; sinon, ce qu'il faut faire pour publier. */
+async function Depot() {
+  const compte = await getSession();
+  if (!compte) {
+    return (
+      <div className="stack">
+        <div className="avis">
+          <p>
+            <strong>Connectez-vous pour publier une annonce.</strong>
+          </p>
+          <p>Le compte est gratuit pour les particuliers. Il sert à retrouver et gérer vos annonces.</p>
+        </div>
+        <div className="boutons">
+          <Link className="btn btn-primary" href="/connexion">
+            Se connecter
+          </Link>
+          <Link className="btn btn-secondary" href="/inscription">
+            Créer un compte
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  if (compte.type === "pro") {
+    return (
+      <div className="avis">
+        <p>
+          <strong>Vos annonces se publient dans votre vitrine.</strong>
+        </p>
+        <p>Les annonces des professionnels ne sont pas mélangées à celles des particuliers.</p>
+        <p>
+          <Link className="link" href="/compte">
+            Aller à mon espace
+          </Link>
+        </p>
+      </div>
+    );
+  }
+  if (!peutPublier(compte, await getAccountListings(compte))) {
+    return (
+      <div className="avis avis-erreur" role="alert">
+        <p>
+          <strong>Vous avez déjà {MAX_ANNONCES_PARTICULIER} annonces actives, le maximum pour un particulier.</strong>
+        </p>
+        <p>
+          <Link className="link" href="/compte/annonces">
+            Voir mes annonces
+          </Link>
+        </p>
+      </div>
+    );
+  }
+  return <PublishForm telephone={compte.telephone} />;
 }

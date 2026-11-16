@@ -309,6 +309,8 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   font: 400 16px/24px var(--font-body); color: var(--ink);
   background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
 }
+.boutons { display: flex; flex-wrap: wrap; gap: 10px; }
+
 /* Inscription : choix du type de compte */
 .choix { border: 0; margin: 0; padding: 0; }
 .choix legend { padding: 0; margin-bottom: 6px; font-weight: 700; }
