@@ -1,176 +1,97 @@
 /**
- * Tests de la connexion et de l'espace annonceur.
+ * Tests de l'espace annonceur et des liens reçus par e-mail.
  *
  * Lancer : npm test (depuis le dossier web)
+ *
+ * La connexion elle-même passe par Supabase Auth : elle se vérifie dans le navigateur, pas ici.
+ * Ces tests portent sur les règles pures de src/lib/accounts.ts et src/lib/redirection.ts.
  */
 import { describe, expect, test } from "vitest";
-import {
-  getAccount,
-  getAccountListings,
-  getComptesDemo,
-  getVitrine,
-  maximumAnnonces,
-  peutPublier,
-  resumer,
-  verifierIdentifiants,
-} from "../src/lib/accounts";
-import { getListing, MAX_ANNONCES_PARTICULIER, MAX_ANNONCES_PRO } from "../src/lib/data";
-import { creerJeton, DUREE_SESSION_MS, lireJeton } from "../src/lib/session-token";
+import { LIBELLE_STATUT, maximumAnnonces, peutPublier, resumer, versSuivi } from "../src/lib/accounts";
+import { MAX_ANNONCES_PARTICULIER, MAX_ANNONCES_PRO } from "../src/lib/data";
+import { cheminDeRetour } from "../src/lib/redirection";
 
-const SECRET = "secret-de-test";
-const MAINTENANT = 1_800_000_000_000;
+const MAINTENANT = Date.parse("2026-11-16T12:00:00Z");
+const actives = (n) => Array.from({ length: n }, () => ({ statut: "active" }));
 
-describe("jeton de session", () => {
-  test("un jeton valide redonne l'identifiant du compte", () => {
-    const jeton = creerJeton("teva", SECRET, MAINTENANT);
-    expect(lireJeton(jeton, SECRET, MAINTENANT + 1000)).toBe("teva");
+/** Une annonce telle que la base la renvoie, à modifier dans chaque test. */
+const ligne = {
+  id: 42,
+  titre: "Scooter 125 cm³",
+  prix_xpf: 220000,
+  statut: "active",
+  boost_jusqu_au: null,
+  categories: { slug: "vehicules" },
+};
+
+describe("limite d'annonces actives", () => {
+  test("un particulier a droit à 5 annonces actives, un pro à 20", () => {
+    expect(MAX_ANNONCES_PARTICULIER).toBe(5);
+    expect(maximumAnnonces({ type: "particulier" })).toBe(5);
+    expect(maximumAnnonces({ type: "pro" })).toBe(MAX_ANNONCES_PRO);
   });
 
-  test("un jeton expire au bout de 7 jours", () => {
-    const jeton = creerJeton("teva", SECRET, MAINTENANT);
-    expect(lireJeton(jeton, SECRET, MAINTENANT + DUREE_SESSION_MS - 1)).toBe("teva");
-    expect(lireJeton(jeton, SECRET, MAINTENANT + DUREE_SESSION_MS)).toBeNull();
+  test("un particulier peut publier tant qu'il a moins de 5 annonces actives", () => {
+    const particulier = { type: "particulier" };
+    expect(peutPublier(particulier, [])).toBe(true);
+    expect(peutPublier(particulier, actives(4))).toBe(true);
+    expect(peutPublier(particulier, actives(5))).toBe(false);
+    expect(peutPublier(particulier, actives(6))).toBe(false);
   });
 
-  test("on ne peut pas changer le compte d'un jeton", () => {
-    const [, expiration, signature] = creerJeton("teva", SECRET, MAINTENANT).split(".");
-    expect(lireJeton(`moana-auto.${expiration}.${signature}`, SECRET, MAINTENANT)).toBeNull();
-  });
-
-  test("on ne peut pas prolonger un jeton", () => {
-    const [compte, expiration, signature] = creerJeton("teva", SECRET, MAINTENANT).split(".");
-    expect(lireJeton(`${compte}.${Number(expiration) + 1000}.${signature}`, SECRET, MAINTENANT)).toBeNull();
-  });
-
-  test("un jeton signé avec un autre secret est refusé", () => {
-    const jeton = creerJeton("teva", "autre-secret", MAINTENANT);
-    expect(lireJeton(jeton, SECRET, MAINTENANT)).toBeNull();
-  });
-
-  test("un jeton absent ou mal formé est refusé", () => {
-    expect(lireJeton(undefined, SECRET, MAINTENANT)).toBeNull();
-    expect(lireJeton("", SECRET, MAINTENANT)).toBeNull();
-    expect(lireJeton("teva", SECRET, MAINTENANT)).toBeNull();
-    expect(lireJeton("teva.123", SECRET, MAINTENANT)).toBeNull();
-    expect(lireJeton("a.b.c.d", SECRET, MAINTENANT)).toBeNull();
+  test("les annonces refusées, retirées ou en attente ne comptent pas dans les 5", () => {
+    const annonces = [...actives(4), { statut: "refusee" }, { statut: "retiree" }, { statut: "en_attente_validation" }];
+    expect(peutPublier({ type: "particulier" }, annonces)).toBe(true);
   });
 });
 
-describe("connexion", () => {
-  const [particulier, pro] = [
-    getComptesDemo().find((c) => c.type === "particulier"),
-    getComptesDemo().find((c) => c.type === "pro"),
-  ];
-
-  test("le bon e-mail et le bon mot de passe ouvrent le compte", () => {
-    expect(verifierIdentifiants(particulier.email, particulier.motDePasse)?.type).toBe("particulier");
-    expect(verifierIdentifiants(pro.email, pro.motDePasse)?.type).toBe("pro");
+describe("annonces de la base dans l'espace annonceur", () => {
+  test("une annonce active a un lien vers sa page publique", () => {
+    expect(versSuivi(ligne, MAINTENANT)).toEqual({
+      id: "42",
+      titre: "Scooter 125 cm³",
+      prixXpf: 220000,
+      categorie: "vehicules",
+      statut: "active",
+      boost: "aucun",
+      vues: 0,
+      contacts: 0,
+      lien: "/annonces/42",
+    });
   });
 
-  test("l'e-mail est accepté avec des majuscules ou des espaces autour", () => {
-    expect(verifierIdentifiants(`  ${particulier.email.toUpperCase()} `, particulier.motDePasse)).not.toBeNull();
-  });
-
-  test("un mauvais mot de passe ou un e-mail inconnu est refusé", () => {
-    expect(verifierIdentifiants(particulier.email, "mauvais")).toBeNull();
-    expect(verifierIdentifiants(particulier.email, "")).toBeNull();
-    expect(verifierIdentifiants("inconnu@exemple.pf", particulier.motDePasse)).toBeNull();
-  });
-
-  test("le compte renvoyé ne contient jamais le mot de passe", () => {
-    const compte = verifierIdentifiants(particulier.email, particulier.motDePasse);
-    expect(JSON.stringify(compte)).not.toContain(particulier.motDePasse);
-    expect(JSON.stringify(getAccount(compte.id))).not.toContain(particulier.motDePasse);
-  });
-
-  test("un identifiant inconnu ne donne aucun compte", () => {
-    expect(getAccount("inconnu")).toBeNull();
-    expect(getAccount(null)).toBeNull();
-  });
-});
-
-describe("espace d'un particulier", () => {
-  const compte = getAccount("teva");
-  const annonces = getAccountListings(compte);
-
-  test("il voit ses annonces avec leur statut", () => {
-    expect(annonces.length).toBeGreaterThan(0);
-    for (const annonce of annonces) {
-      expect(["active", "en_attente_validation", "refusee"]).toContain(annonce.statut);
+  test("une annonce qui n'est pas active n'a pas de lien", () => {
+    for (const statut of ["en_attente_validation", "refusee", "retiree"]) {
+      expect(versSuivi({ ...ligne, statut }, MAINTENANT).lien, statut).toBeUndefined();
     }
   });
 
-  test("seules les annonces actives ont une page publique, et elle est à son nom", () => {
-    for (const annonce of annonces) {
-      if (annonce.statut !== "active") {
-        expect(annonce.lien, annonce.titre).toBeUndefined();
-        continue;
-      }
-      expect(annonce.lien, annonce.titre).toBe(`/annonces/${annonce.id}`);
-      expect(getListing(annonce.id).vendeur, annonce.titre).toBe(compte.nom);
+  test("le boost est actif jusqu'à sa date de fin, pas après", () => {
+    expect(versSuivi({ ...ligne, boost_jusqu_au: "2026-11-20T00:00:00Z" }, MAINTENANT).boost).toBe("actif");
+    expect(versSuivi({ ...ligne, boost_jusqu_au: "2026-11-10T00:00:00Z" }, MAINTENANT).boost).toBe("aucun");
+  });
+
+  test("chaque statut de la base a un libellé", () => {
+    for (const statut of ["active", "en_attente_validation", "refusee", "retiree"]) {
+      expect(LIBELLE_STATUT[statut], statut).toBeTruthy();
     }
   });
 
   test("le résumé compte les annonces actives, les vues et les contacts", () => {
-    const resume = resumer(annonces);
-    expect(resume.total).toBe(annonces.length);
-    expect(resume.actives).toBe(annonces.filter((a) => a.statut === "active").length);
-    expect(resume.vues).toBe(annonces.reduce((s, a) => s + a.vues, 0));
-    expect(resume.contacts).toBe(annonces.reduce((s, a) => s + a.contacts, 0));
-  });
-
-  test("il a droit à 5 annonces actives au plus", () => {
-    expect(MAX_ANNONCES_PARTICULIER).toBe(5);
-    expect(maximumAnnonces(compte)).toBe(5);
-    expect(resumer(annonces).actives).toBeLessThanOrEqual(5);
-  });
-
-  test("il peut publier tant qu'il a moins de 5 annonces actives", () => {
-    const actives = (n) => Array.from({ length: n }, () => ({ statut: "active" }));
-    expect(peutPublier(compte, [])).toBe(true);
-    expect(peutPublier(compte, actives(4))).toBe(true);
-    expect(peutPublier(compte, actives(5))).toBe(false);
-    expect(peutPublier(compte, actives(6))).toBe(false);
-  });
-
-  test("les annonces refusées ou en attente ne comptent pas dans les 5", () => {
-    const annoncesMelees = [
-      ...Array.from({ length: 4 }, () => ({ statut: "active" })),
-      { statut: "refusee" },
-      { statut: "en_attente_validation" },
-    ];
-    expect(peutPublier(compte, annoncesMelees)).toBe(true);
-  });
-
-  test("un particulier n'a pas de vitrine", () => {
-    expect(getVitrine(compte)).toBeNull();
+    const annonces = [versSuivi(ligne, MAINTENANT), versSuivi({ ...ligne, id: 43, statut: "refusee" }, MAINTENANT)];
+    expect(resumer(annonces)).toEqual({ actives: 1, vues: 0, contacts: 0, total: 2 });
   });
 });
 
-describe("espace d'un pro", () => {
-  const compte = getAccount("moana-auto");
-  const annonces = getAccountListings(compte);
+describe("retour après un lien reçu par e-mail", () => {
+  test("une page du site est acceptée", () => {
+    expect(cheminDeRetour("/compte")).toBe("/compte");
+    expect(cheminDeRetour("/mot-de-passe/nouveau")).toBe("/mot-de-passe/nouveau");
+  });
 
-  test("il voit les annonces de sa vitrine, 20 au plus", () => {
-    expect(annonces.length).toBeGreaterThan(0);
-    expect(annonces.length).toBeLessThanOrEqual(MAX_ANNONCES_PRO);
-    for (const annonce of annonces) {
-      expect(getListing(annonce.id).shopId, annonce.titre).toBe(compte.shopId);
+  test("une adresse vers un autre site est remplacée par l'espace annonceur", () => {
+    for (const piege of ["//exemple.com", "https://exemple.com", "/\\exemple.com", "\\\\exemple.com", "exemple.com", "/ x", "", null, undefined]) {
+      expect(cheminDeRetour(piege), String(piege)).toBe("/compte");
     }
-  });
-
-  test("aucune de ses annonces n'est boostée : le boost est réservé aux particuliers", () => {
-    expect(annonces.every((a) => a.boost === "aucun")).toBe(true);
-  });
-
-  test("sa limite est celle de la vitrine, pas celle des particuliers", () => {
-    expect(maximumAnnonces(compte)).toBe(MAX_ANNONCES_PRO);
-  });
-
-  test("sa vitrine indique le nombre d'annonces et le maximum", () => {
-    const vitrine = getVitrine(compte);
-    expect(vitrine.pro.slug).toBe(compte.shopId);
-    expect(vitrine.annonces).toBe(annonces.length);
-    expect(vitrine.maximum).toBe(MAX_ANNONCES_PRO);
   });
 });

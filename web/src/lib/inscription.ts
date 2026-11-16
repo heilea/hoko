@@ -45,13 +45,27 @@ export function lireEmail(saisie: string): string | null {
 }
 
 /**
- * Vérifie une inscription.
- * @param emailDejaUtilise indique si un compte existe déjà avec cet e-mail
+ * Vérifie un nouveau mot de passe et sa confirmation (inscription, mot de passe oublié).
+ * Renvoie les messages d'erreur, vides si tout convient.
  */
-export function validerInscription(
-  saisie: InscriptionSaisie,
-  emailDejaUtilise: (email: string) => boolean = () => false,
-): ResultatInscription {
+export function validerMotDePasse(motDePasse: string, confirmation: string): { motDePasse?: string; confirmation?: string } {
+  const erreurs: { motDePasse?: string; confirmation?: string } = {};
+  if (!motDePasse) erreurs.motDePasse = "Choisissez un mot de passe.";
+  else if (motDePasse.length < MOT_DE_PASSE_MIN) {
+    erreurs.motDePasse = `Le mot de passe doit compter ${MOT_DE_PASSE_MIN} caractères au moins.`;
+  } else if (motDePasse.length > MOT_DE_PASSE_MAX) {
+    erreurs.motDePasse = `Raccourcissez le mot de passe à ${MOT_DE_PASSE_MAX} caractères.`;
+  }
+  if (!confirmation) erreurs.confirmation = "Saisissez le mot de passe une seconde fois.";
+  else if (confirmation !== motDePasse) erreurs.confirmation = "Les deux mots de passe sont différents.";
+  return erreurs;
+}
+
+/**
+ * Vérifie une inscription. L'existence d'un compte avec le même e-mail n'est pas vérifiée
+ * ici : Supabase Auth s'en charge sans le révéler.
+ */
+export function validerInscription(saisie: InscriptionSaisie): ResultatInscription {
   const erreurs: Partial<Record<ChampInscription, string>> = {};
   const pro = saisie.type === "pro";
 
@@ -65,21 +79,12 @@ export function validerInscription(
   const email = lireEmail(saisie.email);
   if (!saisie.email.trim()) erreurs.email = "Indiquez votre e-mail.";
   else if (email === null) erreurs.email = "Cet e-mail n'est pas valide. Exemple : prenom@exemple.pf.";
-  else if (emailDejaUtilise(email)) erreurs.email = "Un compte existe déjà avec cet e-mail. Connectez-vous.";
 
   const telephone = formaterTelephone(saisie.telephone);
   if (!saisie.telephone.trim()) erreurs.telephone = "Indiquez votre numéro de téléphone.";
   else if (telephone === null) erreurs.telephone = "Le numéro doit compter 8 chiffres. Exemple : 87 12 34 56.";
 
-  if (!saisie.motDePasse) erreurs.motDePasse = "Choisissez un mot de passe.";
-  else if (saisie.motDePasse.length < MOT_DE_PASSE_MIN) {
-    erreurs.motDePasse = `Le mot de passe doit compter ${MOT_DE_PASSE_MIN} caractères au moins.`;
-  } else if (saisie.motDePasse.length > MOT_DE_PASSE_MAX) {
-    erreurs.motDePasse = `Raccourcissez le mot de passe à ${MOT_DE_PASSE_MAX} caractères.`;
-  }
-
-  if (!saisie.confirmation) erreurs.confirmation = "Saisissez le mot de passe une seconde fois.";
-  else if (saisie.confirmation !== saisie.motDePasse) erreurs.confirmation = "Les deux mots de passe sont différents.";
+  Object.assign(erreurs, validerMotDePasse(saisie.motDePasse, saisie.confirmation));
 
   // Les champs de la vitrine ne comptent que pour un pro
   const numeroTahiti = saisie.numeroTahiti.trim().replace(/\s+/g, " ").toUpperCase();

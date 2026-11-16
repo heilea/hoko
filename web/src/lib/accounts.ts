@@ -1,35 +1,28 @@
 /**
- * Comptes de démonstration et ce que chaque annonceur voit dans son espace.
+ * Ce que chaque annonceur voit dans son espace : types et règles.
  *
- * ATTENTION : ce fichier remplace la vraie gestion des comptes, qui reste à choisir
- * (fournisseur d'authentification, SPEC.md section 8). Les mots de passe ci-dessous sont
- * des valeurs de démonstration, écrites en clair. Ne jamais y mettre un vrai mot de passe.
- * Avec une vraie base : mots de passe hachés, inscription, réinitialisation, limite d'essais.
+ * Fonctions pures, couvertes par les tests. La lecture dans Supabase est dans
+ * `compte-donnees.ts`.
  */
-import {
-  getCategory,
-  getListing,
-  getPro,
-  getProListings,
-  MAX_ANNONCES_PARTICULIER,
-  MAX_ANNONCES_PRO,
-  type Pro,
-} from "./data";
+import { MAX_ANNONCES_PARTICULIER, MAX_ANNONCES_PRO } from "./data";
 
 export type Account = {
+  /** Identifiant Supabase Auth. */
   id: string;
   type: "particulier" | "pro";
   /** Prénom du particulier, ou nom de l'entreprise. */
   nom: string;
+  /** Sert à se connecter. Visible par le titulaire du compte uniquement. */
   email: string;
   /** Visible par le titulaire du compte uniquement. */
   telephone: string;
-  /** Vitrine du pro. */
-  shopId?: Pro["slug"];
+  /** Adresse de la vitrine du pro. */
+  shopId?: string;
 };
 
-export type StatutAnnonce = "active" | "en_attente_validation" | "refusee";
+export type StatutAnnonce = "active" | "en_attente_validation" | "refusee" | "retiree";
 export type StatutBoost = "aucun" | "actif" | "en_attente_paiement";
+export type StatutVitrine = "en_attente_paiement" | "actif" | "suspendu";
 
 /** Une annonce vue par son propriétaire, avec son statut et ses chiffres. */
 export type AccountListing = {
@@ -39,96 +32,54 @@ export type AccountListing = {
   categorie: string;
   statut: StatutAnnonce;
   boost: StatutBoost;
-  /** Chiffres d'exemple : les vues et les clics ne sont pas encore comptés. */
+  /** Les vues et les clics sur « Voir le numéro » ne sont pas encore comptés. */
   vues: number;
   contacts: number;
   /** Page publique de l'annonce, si elle est en ligne. */
   lien?: string;
 };
 
-type CompteDemo = Account & { motDePasseDemo: string };
+/** La vitrine d'un pro, telle qu'il la voit dans son espace. */
+export type Vitrine = {
+  slug: string;
+  nom: string;
+  secteur: string;
+  ile: string;
+  commune: string;
+  presentation: string;
+  horaires: string[];
+  /** Badge « Pro vérifié » : accordé après contrôle du numéro TAHITI. */
+  verifie: boolean;
+  statut: StatutVitrine;
+  annonces: number;
+  maximum: number;
+};
 
-const comptes: CompteDemo[] = [
-  {
-    id: "teva",
-    type: "particulier",
-    nom: "Teva",
-    email: "teva@demo.hoko.pf",
-    telephone: "87 00 00 01",
-    motDePasseDemo: "demo-hoko",
-  },
-  {
-    id: "moana-auto",
-    type: "pro",
-    nom: "Moana Auto",
-    email: "contact@moana-auto.demo.hoko.pf",
-    telephone: "40 00 00 02",
-    shopId: "moana-auto",
-    motDePasseDemo: "demo-hoko",
-  },
-];
+/** Une ligne de la table `listings`, avec le slug de sa catégorie. */
+export type LigneAnnonce = {
+  id: number | string;
+  titre: string;
+  prix_xpf: number;
+  statut: StatutAnnonce;
+  boost_jusqu_au: string | null;
+  categories: { slug: string } | null;
+};
 
-/** Annonces du particulier de démonstration : en ligne, en attente et refusée. */
-const annoncesTeva: Omit<AccountListing, "titre" | "prixXpf" | "categorie" | "lien">[] = [
-  { id: "1", statut: "active", boost: "actif", vues: 214, contacts: 9 },
-  { id: "4", statut: "active", boost: "en_attente_paiement", vues: 61, contacts: 2 },
-];
-
-const brouillonsTeva: AccountListing[] = [
-  { id: "t-1", titre: "Casque intégral taille M", prixXpf: 12000, categorie: "vehicules", statut: "en_attente_validation", boost: "aucun", vues: 0, contacts: 0 },
-  { id: "t-2", titre: "Lot de pièces détachées", prixXpf: 30000, categorie: "vehicules", statut: "refusee", boost: "aucun", vues: 0, contacts: 0 },
-];
-
-function sansMotDePasse(compte: CompteDemo): Account {
-  const { motDePasseDemo: _retire, ...reste } = compte;
-  void _retire;
-  return reste;
-}
-
-export function getAccount(id: string | null): Account | null {
-  const compte = comptes.find((c) => c.id === id);
-  return compte ? sansMotDePasse(compte) : null;
-}
-
-/** Vérifie un e-mail et un mot de passe. Renvoie le compte, ou null si l'un des deux est faux. */
-export function verifierIdentifiants(email: string, motDePasse: string): Account | null {
-  const compte = comptes.find((c) => c.email === email.trim().toLowerCase());
-  if (!compte || compte.motDePasseDemo !== motDePasse) return null;
-  return sansMotDePasse(compte);
-}
-
-/** Indique si un compte existe déjà avec cet e-mail (un seul compte par e-mail). */
-export function emailDejaUtilise(email: string): boolean {
-  return comptes.some((c) => c.email === email.trim().toLowerCase());
-}
-
-/** Comptes proposés sur la page de connexion de la démonstration. */
-export function getComptesDemo(): { type: Account["type"]; email: string; motDePasse: string }[] {
-  return comptes.map((c) => ({ type: c.type, email: c.email, motDePasse: c.motDePasseDemo }));
-}
-
-/** Les annonces d'un compte, telles que son propriétaire les voit. */
-export function getAccountListings(compte: Account): AccountListing[] {
-  if (compte.type === "pro" && compte.shopId) {
-    // Chiffres d'exemple, stables d'un affichage à l'autre
-    return getProListings(compte.shopId).map((annonce, rang) => ({
-      id: annonce.id,
-      titre: annonce.titre,
-      prixXpf: annonce.prixXpf,
-      categorie: annonce.categorie,
-      statut: "active",
-      boost: "aucun", // un pro ne peut pas booster
-      vues: 320 - rang * 85,
-      contacts: 14 - rang * 4,
-      lien: `/annonces/${annonce.id}`,
-    }));
-  }
-  const enLigne = annoncesTeva.flatMap((suivi) => {
-    const annonce = getListing(suivi.id);
-    if (!annonce) return [];
-    return [{ ...suivi, titre: annonce.titre, prixXpf: annonce.prixXpf, categorie: annonce.categorie, lien: `/annonces/${annonce.id}` }];
-  });
-  return [...enLigne, ...brouillonsTeva];
+/** Met une annonce de la base au format de l'espace annonceur. */
+export function versSuivi(ligne: LigneAnnonce, maintenant: number): AccountListing {
+  const id = String(ligne.id);
+  const boostFin = ligne.boost_jusqu_au ? Date.parse(ligne.boost_jusqu_au) : NaN;
+  return {
+    id,
+    titre: ligne.titre,
+    prixXpf: ligne.prix_xpf,
+    categorie: ligne.categories?.slug ?? "",
+    statut: ligne.statut,
+    boost: boostFin > maintenant ? "actif" : "aucun",
+    vues: 0,
+    contacts: 0,
+    lien: ligne.statut === "active" ? `/annonces/${id}` : undefined,
+  };
 }
 
 /** Nombre d'annonces actives autorisé : 5 pour un particulier, 20 pour la vitrine d'un pro. */
@@ -152,27 +103,20 @@ export function resumer(annonces: AccountListing[]): ResumeCompte {
   };
 }
 
-/** État de la vitrine d'un pro. Valeurs d'exemple : le paiement et la vérification ne sont pas branchés. */
-export function getVitrine(compte: Account) {
-  const pro = compte.shopId ? getPro(compte.shopId) : undefined;
-  if (!pro) return null;
-  return {
-    pro,
-    secteur: getCategory(pro.categorie)?.nom ?? pro.secteur,
-    statut: "active" as "active" | "en_attente_paiement" | "suspendue",
-    verifie: true,
-    annonces: getProListings(pro.slug).length,
-    maximum: MAX_ANNONCES_PRO,
-  };
-}
-
 export const LIBELLE_STATUT: Record<StatutAnnonce, string> = {
   active: "Active",
   en_attente_validation: "En attente de validation",
   refusee: "Refusée",
+  retiree: "Retirée",
 };
 
 export const LIBELLE_BOOST: Record<Exclude<StatutBoost, "aucun">, string> = {
   actif: "Boost actif",
   en_attente_paiement: "Boost en attente de paiement",
+};
+
+export const LIBELLE_VITRINE: Record<StatutVitrine, string> = {
+  actif: "Vitrine active",
+  en_attente_paiement: "En attente de paiement",
+  suspendu: "Vitrine suspendue",
 };

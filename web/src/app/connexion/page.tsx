@@ -3,13 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/LoginForm";
-import { getComptesDemo } from "@/lib/accounts";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Connexion" };
 
-export default function LoginPage() {
-  const demo = getComptesDemo();
+export default function LoginPage({ searchParams }: PageProps<"/connexion">) {
   return (
     <main>
       <section className="band">
@@ -25,29 +23,24 @@ export default function LoginPage() {
               <DejaConnecte />
             </Suspense>
 
+            {/* Retour d'un lien reçu par e-mail qui n'a pas fonctionné */}
+            <Suspense fallback={null}>
+              <MessageLien searchParams={searchParams} />
+            </Suspense>
+
             <LoginForm />
 
+            <p className="small muted">
+              <Link className="link" href="/mot-de-passe">
+                Mot de passe oublié ?
+              </Link>
+            </p>
             <p className="small muted">
               Pas encore de compte ?{" "}
               <Link className="link" href="/inscription">
                 Créer un compte
               </Link>
             </p>
-
-            <div className="avis">
-              <p>
-                <strong>Version de démonstration</strong>
-              </p>
-              <p className="small">Deux comptes d&apos;exemple permettent de visiter l&apos;espace annonceur :</p>
-              <ul className="demo small">
-                {demo.map((compte) => (
-                  <li key={compte.email}>
-                    {compte.type === "pro" ? "Professionnel" : "Particulier"} : <code>{compte.email}</code>, mot de passe{" "}
-                    <code>{compte.motDePasse}</code>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
         </div>
       </section>
@@ -58,4 +51,20 @@ export default function LoginPage() {
 async function DejaConnecte() {
   if (await getSession()) redirect("/compte");
   return null;
+}
+
+async function MessageLien({ searchParams }: Pick<PageProps<"/connexion">, "searchParams">) {
+  const { erreur } = await searchParams;
+  if (erreur !== "lien") return null;
+  return (
+    <div className="avis avis-erreur" role="alert">
+      <p>
+        <strong>Ce lien a expiré ou a déjà servi.</strong>
+      </p>
+      <p className="small">
+        Si vous venez de confirmer votre adresse, essayez de vous connecter. Sinon, demandez un nouveau lien depuis « Mot de
+        passe oublié ».
+      </p>
+    </div>
+  );
 }
