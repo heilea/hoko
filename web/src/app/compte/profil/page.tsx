@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getVitrine } from "@/lib/accounts";
+import { getVitrine } from "@/lib/compte-donnees";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Mon profil" };
@@ -12,7 +12,7 @@ export default async function ProfilePage() {
   const compte = await getSession();
   if (!compte) redirect("/connexion");
 
-  const vitrine = getVitrine(compte);
+  const vitrine = await getVitrine(compte);
 
   return (
     <>
@@ -41,23 +41,25 @@ export default async function ProfilePage() {
           <h2>Ma vitrine</h2>
           <dl className="details details-nus">
             <dt>Secteur</dt>
-            <dd>{vitrine.pro.secteur}</dd>
+            <dd>{vitrine.secteur}</dd>
             <dt>Adresse</dt>
             <dd>
-              {vitrine.pro.commune}, {vitrine.pro.ile}
+              {vitrine.commune}, {vitrine.ile}
             </dd>
             <dt>Horaires</dt>
             <dd>
-              {vitrine.pro.horaires.map((ligne) => (
-                <span key={ligne} className="ligne">
-                  {ligne}
-                </span>
-              ))}
+              {vitrine.horaires.length > 0
+                ? vitrine.horaires.map((ligne) => (
+                    <span key={ligne} className="ligne">
+                      {ligne}
+                    </span>
+                  ))
+                : "Non renseignés"}
             </dd>
             <dt>Numéro TAHITI</dt>
             <dd>{vitrine.verifie ? "Contrôlé par Hoko" : "En attente de contrôle"}</dd>
             <dt>Présentation</dt>
-            <dd className="description">{vitrine.pro.presentation}</dd>
+            <dd className="description">{vitrine.presentation || "Non renseignée"}</dd>
           </dl>
         </div>
       )}

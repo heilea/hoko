@@ -78,13 +78,13 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Fonction | État | Règle |
 |---|---|---|
 | Dépôt d'annonce (formulaire + validation serveur) | 🟡 | Valide les champs mais **n'enregistre rien** tant qu'il n'y a pas de base |
-| Inscription (formulaire + validation serveur) | 🟡 | Particulier ou pro (5.8). Valide les champs mais **ne crée pas le compte** tant qu'il n'y a pas de base |
-| Connexion par e-mail + mot de passe | 🟡 | Session par cookie signé ; deux comptes de démonstration seulement |
+| Inscription | ✅ | Particulier ou pro (5.8), avec Supabase Auth et confirmation de l'adresse par e-mail. La vitrine d'un pro est créée « en attente de paiement » |
+| Connexion par e-mail + mot de passe | ✅ | Supabase Auth, qui limite les essais. Plus de comptes de démonstration |
 | Tableau de bord, mes annonces, mon profil | 🟡 | Statuts et chiffres d'exemple |
 | Modifier / supprimer / marquer « vendu » | ⬜ | [Proposé] V1 |
 | Achat d'un boost | ⬜ | Statut « en attente de paiement » déjà modélisé |
 | Statistiques réelles (vues, contacts) | ⬜ | « Contacts » = numéros révélés |
-| Réinitialisation du mot de passe | ⬜ | V1 |
+| Réinitialisation du mot de passe | ✅ | Lien envoyé par e-mail |
 
 ### 3.3 Côté administrateur ⬜
 
@@ -220,7 +220,7 @@ Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirme
 
 ### 7.1 Sécurité
 
-- **Mots de passe** : gérés par Supabase Auth, qui les hache. Jamais en clair. Les mots de passe de démonstration actuels dans `accounts.ts` **doivent disparaître** avant toute mise en ligne.
+- **Mots de passe** : gérés par Supabase Auth, qui les hache. Jamais en clair. Les comptes de démonstration ont été retirés.
 - **Session** : cookie `httpOnly`, `sameSite=lax`, `secure` en production, signé avec `SESSION_SECRET`. **Sans cette variable, la connexion est désactivée en production** [Acquis].
 - **Connexion** : même message d'erreur pour e-mail inconnu et mot de passe faux [Acquis] ; **limite d'essais à ajouter**.
 - **Envoi de photos** : vérifier le type réel du fichier (pas seulement l'extension), retirer les métadonnées (position GPS), stocker hors du serveur applicatif.

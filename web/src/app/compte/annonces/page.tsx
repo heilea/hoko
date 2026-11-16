@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AccountListingRow } from "@/components/AccountListingRow";
-import { getAccountListings, maximumAnnonces, resumer } from "@/lib/accounts";
+import { maximumAnnonces, resumer } from "@/lib/accounts";
+import { getAccountListings } from "@/lib/compte-donnees";
 import { prixXpf } from "@/lib/format";
 import { getSession } from "@/lib/session";
 
@@ -15,7 +16,7 @@ export default async function AccountListingsPage() {
   const compte = await getSession();
   if (!compte) redirect("/connexion");
 
-  const annonces = getAccountListings(compte);
+  const annonces = await getAccountListings(compte);
   const actives = resumer(annonces).actives;
 
   return (

@@ -6,8 +6,7 @@
  * Ils portent sur les règles de src/lib/inscription.ts (SPEC.md, section 4 quater).
  */
 import { describe, expect, test } from "vitest";
-import { emailDejaUtilise, getComptesDemo } from "../src/lib/accounts";
-import { lireEmail, MOT_DE_PASSE_MIN, NOM_MAX, NUMERO_TAHITI_MAX, validerInscription } from "../src/lib/inscription";
+import { lireEmail, MOT_DE_PASSE_MIN, NOM_MAX, NUMERO_TAHITI_MAX, validerInscription, validerMotDePasse } from "../src/lib/inscription";
 
 /** Un particulier correct, à modifier champ par champ dans chaque test. */
 const particulier = {
@@ -34,7 +33,7 @@ const pro = {
 };
 
 const erreursDe = (saisie) => {
-  const resultat = validerInscription(saisie, emailDejaUtilise);
+  const resultat = validerInscription(saisie);
   return resultat.ok ? {} : resultat.erreurs;
 };
 
@@ -80,12 +79,6 @@ describe("e-mail", () => {
       expect(erreursDe({ ...particulier, email }).email, email).toBeDefined();
     }
   });
-
-  test("un e-mail déjà inscrit est refusé, quelle que soit la casse", () => {
-    const existant = getComptesDemo()[0].email;
-    expect(erreursDe({ ...particulier, email: existant }).email).toContain("existe déjà");
-    expect(erreursDe({ ...particulier, email: `  ${existant.toUpperCase()} ` }).email).toContain("existe déjà");
-  });
 });
 
 describe("téléphone et mot de passe", () => {
@@ -99,6 +92,13 @@ describe("téléphone et mot de passe", () => {
     expect(erreursDe({ ...particulier, motDePasse: court, confirmation: court }).motDePasse).toBeDefined();
     const juste = "x".repeat(MOT_DE_PASSE_MIN);
     expect(erreursDe({ ...particulier, motDePasse: juste, confirmation: juste })).toEqual({});
+  });
+
+  test("le nouveau mot de passe (mot de passe oublié) suit les mêmes règles", () => {
+    expect(validerMotDePasse("pirogue-bleue", "pirogue-bleue")).toEqual({});
+    expect(validerMotDePasse("court", "court").motDePasse).toBeDefined();
+    expect(validerMotDePasse("pirogue-bleue", "pirogue-rouge").confirmation).toBeDefined();
+    expect(Object.keys(validerMotDePasse("", "")).sort()).toEqual(["confirmation", "motDePasse"]);
   });
 
   test("les deux mots de passe doivent être identiques", () => {

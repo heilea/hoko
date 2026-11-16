@@ -19,6 +19,7 @@ export function SignupForm() {
   const erreurs = etat.statut === "erreurs" ? etat.erreurs : {};
   const saisie = etat.statut === "erreurs" ? etat.saisie : undefined;
   const nombreErreurs = Object.keys(erreurs).length;
+  const general = etat.statut === "erreurs" ? etat.general : undefined;
   const pro = type === "pro";
 
   // Après un envoi refusé, on amène le lecteur sur le résumé des erreurs
@@ -26,40 +27,20 @@ export function SignupForm() {
     if (etat.statut === "erreurs") resume.current?.focus();
   }, [etat]);
 
-  if (etat.statut === "valide") {
-    const { compte } = etat;
-    const secteur = categories.find((c) => c.slug === compte.vitrine?.secteur);
+  if (etat.statut === "envoye") {
     return (
       <div className="stack" role="status">
         <div className="avis">
           <p>
-            <strong>Votre inscription est complète, mais le compte n&apos;a pas été créé.</strong>
+            <strong>Vérifiez votre boîte mail.</strong>
           </p>
-          <p>La création de compte n&apos;est pas encore ouverte sur Hoko. Voici ce qui serait enregistré.</p>
+          <p>
+            Si aucun compte n&apos;existe déjà pour <strong>{etat.email}</strong>, un lien de confirmation vient d&apos;y être
+            envoyé. Cliquez dessus pour activer votre compte, puis connectez-vous.
+          </p>
+          <p className="small">Rien reçu après quelques minutes ? Regardez dans les courriers indésirables.</p>
         </div>
-        <dl className="details">
-          <dt>Type de compte</dt>
-          <dd>{compte.type === "pro" ? "Professionnel" : "Particulier"}</dd>
-          <dt>{compte.type === "pro" ? "Entreprise" : "Prénom"}</dt>
-          <dd>{compte.nom}</dd>
-          <dt>E-mail</dt>
-          <dd>{compte.email} (jamais affiché)</dd>
-          <dt>Téléphone</dt>
-          <dd>{compte.telephone}</dd>
-          {compte.vitrine && (
-            <>
-              <dt>Numéro TAHITI</dt>
-              <dd>{compte.vitrine.numeroTahiti}</dd>
-              <dt>Secteur</dt>
-              <dd>{secteur?.nom}</dd>
-              <dt>Adresse</dt>
-              <dd>
-                {compte.vitrine.commune}, {compte.vitrine.ile}
-              </dd>
-            </>
-          )}
-        </dl>
-        {compte.vitrine && (
+        {pro && (
           <div className="avis">
             <p>
               <strong>La suite pour un professionnel</strong>
@@ -101,11 +82,11 @@ export function SignupForm() {
         startTransition(() => envoyer(donnees));
       }}
     >
-      {nombreErreurs > 0 && (
+      {(nombreErreurs > 0 || general) && (
         <div className="avis avis-erreur" ref={resume} tabIndex={-1} role="alert">
           <strong>
-            {nombreErreurs > 1 ? `${nombreErreurs} champs sont à corriger` : "Un champ est à corriger"} avant de créer le
-            compte.
+            {general ??
+              `${nombreErreurs > 1 ? `${nombreErreurs} champs sont à corriger` : "Un champ est à corriger"} avant de créer le compte.`}
           </strong>
         </div>
       )}
