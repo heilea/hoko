@@ -5,6 +5,7 @@
  * `compte-donnees.ts`.
  */
 import { MAX_ANNONCES_PARTICULIER, MAX_ANNONCES_PRO } from "./data";
+import type { Tables } from "./database.types";
 
 export type Account = {
   /** Identifiant Supabase Auth. */
@@ -55,30 +56,42 @@ export type Vitrine = {
   maximum: number;
 };
 
-/** Une ligne de la table `listings`, avec le slug de sa catégorie. */
-export type LigneAnnonce = {
-  id: number | string;
-  titre: string;
-  prix_xpf: number;
-  statut: StatutAnnonce;
-  boost_jusqu_au: string | null;
-  categories: { slug: string } | null;
+/** Une ligne de la table `listings` (types générés), avec le slug de sa catégorie. */
+export type LigneAnnonce = Pick<Tables<"listings">, "id" | "titre" | "prix_xpf" | "statut" | "boost_jusqu_au"> & {
+  categories: Pick<Tables<"categories">, "slug"> | null;
 };
+
+const STATUTS_ANNONCE: readonly StatutAnnonce[] = ["active", "en_attente_validation", "refusee", "retiree"];
+const STATUTS_VITRINE: readonly StatutVitrine[] = ["en_attente_paiement", "actif", "suspendu"];
+
+/**
+ * Ramène un statut lu dans la base (du texte) à une valeur connue. Une valeur inconnue est
+ * traitée avec prudence : l'annonce est considérée comme en attente, jamais comme en ligne.
+ */
+export function lireStatutAnnonce(valeur: string): StatutAnnonce {
+  return STATUTS_ANNONCE.find((s) => s === valeur) ?? "en_attente_validation";
+}
+
+/** Même principe pour une vitrine : une valeur inconnue la laisse hors ligne. */
+export function lireStatutVitrine(valeur: string): StatutVitrine {
+  return STATUTS_VITRINE.find((s) => s === valeur) ?? "en_attente_paiement";
+}
 
 /** Met une annonce de la base au format de l'espace annonceur. */
 export function versSuivi(ligne: LigneAnnonce, maintenant: number): AccountListing {
   const id = String(ligne.id);
+  const statut = lireStatutAnnonce(ligne.statut);
   const boostFin = ligne.boost_jusqu_au ? Date.parse(ligne.boost_jusqu_au) : NaN;
   return {
     id,
     titre: ligne.titre,
     prixXpf: ligne.prix_xpf,
     categorie: ligne.categories?.slug ?? "",
-    statut: ligne.statut,
+    statut,
     boost: boostFin > maintenant ? "actif" : "aucun",
     vues: 0,
     contacts: 0,
-    lien: ligne.statut === "active" ? `/annonces/${id}` : undefined,
+    lien: statut === "active" ? `/annonces/${id}` : undefined,
   };
 }
 

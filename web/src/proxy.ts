@@ -9,6 +9,7 @@
  */
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { Database } from "./lib/database.types";
 
 export async function proxy(request: NextRequest) {
   let reponse = NextResponse.next({ request });
@@ -18,7 +19,7 @@ export async function proxy(request: NextRequest) {
   // Sans Supabase ou sans cookie de session, rien à renouveler : pas d'appel réseau
   if (!url || !cle || !request.cookies.getAll().some((c) => c.name.startsWith("sb-"))) return reponse;
 
-  const supabase = createServerClient(url, cle, {
+  const supabase = createServerClient<Database>(url, cle, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(aEcrire, entetes) {

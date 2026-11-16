@@ -11,6 +11,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
+import type { Database } from "./database.types";
 
 export async function creerClientServeur() {
   // Les cookies sont lus en premier, avant tout retour : c'est cette lecture qui indique à
@@ -23,7 +24,8 @@ export async function creerClientServeur() {
   const cle = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !cle) return null;
 
-  return createServerClient(url, cle, {
+  // Client typé : TypeScript connaît chaque table et chaque colonne (database.types.ts)
+  return createServerClient<Database>(url, cle, {
     cookies: {
       getAll: () => magasin.getAll(),
       setAll(aEcrire) {
