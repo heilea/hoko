@@ -1,9 +1,11 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { peutPublier } from "@/lib/accounts";
 import { getAccountListings } from "@/lib/compte-donnees";
-import { getListingPhone, getProPhone, MAX_ANNONCES_PARTICULIER } from "@/lib/data";
+import { getListingPhone, getProPhone, TAG_ANNONCES } from "@/lib/annonces-donnees";
+import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
 import {
   lireEmail,
   validerInscription,
@@ -11,6 +13,7 @@ import {
   type ChampInscription,
   type InscriptionRenvoyee,
 } from "@/lib/inscription";
+import { lireDecision, messageErreurModeration, verifierMotifRefus } from "@/lib/moderation";
 import { fermerSession, getSession } from "@/lib/session";
 import { adresseDuSite, creerClientServeur } from "@/lib/supabase-serveur";
 import { validerAnnonce, type AnnonceSaisie, type ChampAnnonce } from "@/lib/validation";
@@ -246,6 +249,45 @@ export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormDa
   return { statut: "enregistree", titre: annonce.titre };
 }
 
+// ───────────────────────── Validation des annonces (administrateur) ─────────────────────────
+
+export type EtatModeration = { erreur?: string; motif?: string };
+
+/**
+ * Valide ou refuse une annonce en attente. La base vérifie elle-même que la personne est
+ * administrateur (fonction `moderer_annonce`) : la vérification ci-dessous sert à répondre
+ * clairement, elle ne remplace pas celle de la base.
+ */
+export async function modererAnnonce(_precedent: EtatModeration, formulaire: FormData): Promise<EtatModeration> {
+  const id = Number(lire(formulaire, "id", 20));
+  const decision = lireDecision(formulaire.get("decision"));
+  const motif = lire(formulaire, "motif", 2000);
+
+  const compte = await getSession();
+  if (!compte?.admin) return { erreur: messageErreurModeration("42501"), motif };
+  if (!Number.isSafeInteger(id) || id <= 0 || !decision) return { erreur: messageErreurModeration("22023"), motif };
+  if (decision === "refusee") {
+    const probleme = verifierMotifRefus(motif);
+    if (probleme) return { erreur: probleme, motif };
+  }
+
+  const supabase = await creerClientServeur();
+  if (!supabase) return { erreur: INDISPONIBLE, motif };
+  const { error } = await supabase.rpc("moderer_annonce", {
+    annonce_id: id,
+    decision,
+    ...(decision === "refusee" ? { motif: motif.trim() } : {}),
+  });
+  if (error) {
+    console.error("Décision refusée par la base :", error.code);
+    return { erreur: messageErreurModeration(error.code), motif };
+  }
+  // Les pages publiques relisent aussitôt les annonces : une annonce validée apparaît sans attendre
+  updateTag(TAG_ANNONCES);
+  // Retour à la file, rechargée sans l'annonce traitée
+  redirect(`/admin?fait=${decision}`);
+}
+
 // ───────────────────────── Voir le numéro ─────────────────────────
 
 export type CibleContact = { type: "annonce" | "pro"; id: string };
@@ -255,12 +297,12 @@ export type CibleContact = { type: "annonce" | "pro"; id: string };
  * sur une annonce ou sur la vitrine d'un pro.
  * Le numéro ne figure jamais dans la page : il n'est envoyé qu'à cette demande.
  *
- * À faire avec la base de données : enregistrer chaque appel dans `contact_reveals`
- * (statistique « contacts reçus ») et limiter le nombre de demandes par visiteur.
+ * La base compte chaque demande dans `contact_reveals` (statistique « contacts reçus »).
+ * À faire avant l'ouverture : limiter le nombre de demandes par visiteur.
  */
 export async function revealPhone(cible: CibleContact): Promise<string | null> {
   if (!cible || typeof cible.id !== "string" || cible.id.length > 60) return null;
-  if (cible.type === "annonce") return getListingPhone(cible.id) ?? null;
-  if (cible.type === "pro") return getProPhone(cible.id) ?? null;
+  if (cible.type === "annonce") return getListingPhone(cible.id);
+  if (cible.type === "pro") return getProPhone(cible.id);
   return null;
 }

@@ -5,19 +5,15 @@ import { Suspense } from "react";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
 import { RevealPhone } from "@/components/RevealPhone";
-import { getCategory, getPro, getProListings, getProSlugs, MAX_ANNONCES_PRO } from "@/lib/data";
+import { getPro, getProListings } from "@/lib/annonces-donnees";
+import { getCategory, MAX_ANNONCES_PRO } from "@/lib/data";
 import { sigle } from "@/lib/format";
 
 type Props = PageProps<"/pros/[slug]">;
 
-// Les vitrines connues sont pré-rendues à la construction du site.
-export function generateStaticParams() {
-  return getProSlugs().map((slug) => ({ slug }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const pro = getPro(slug);
+  const pro = await getPro(slug);
   if (!pro) return { title: "Vitrine introuvable" };
   return { title: pro.nom, description: `${pro.secteur} à ${pro.commune}, ${pro.ile}. ${pro.presentation}` };
 }
@@ -45,10 +41,10 @@ export default function ShopPage({ params }: Props) {
 
 async function Vitrine({ params }: Pick<Props, "params">) {
   const { slug } = await params;
-  const pro = getPro(slug);
+  const pro = await getPro(slug);
   if (!pro) notFound();
 
-  const annonces = getProListings(pro.slug);
+  const annonces = await getProListings(pro.slug);
   const categorie = getCategory(pro.categorie);
 
   return (

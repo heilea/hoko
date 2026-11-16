@@ -54,7 +54,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 | Fonction | État | Règle |
 |---|---|---|
-| Accueil : recherche, catégories, annonces de particuliers, pros mis en avant | 🟡 | Aujourd'hui l'accueil liste **toutes** les annonces dans l'ordre du fichier de données, sans tri par date ni limite (voir 3.1.1) |
+| Accueil : recherche, catégories, annonces de particuliers, pros mis en avant | 🟡 | Lu dans la base, trié par date de création (les plus récentes d'abord), sans boost. Pas encore de pagination : jusqu'à 100 annonces d'un coup (voir 3.1.1)
 | Pages de catégorie | ✅ | Les annonces boostées passent en tête |
 | Recherche par mot-clé | ✅ | Insensible aux accents et à la casse. Ne renvoie **pas** les annonces pro |
 | Page d'annonce | 🟡 | Titre, prix, description, lieu, date, vendeur, annonces similaires. Photos : emplacement vide tant que l'envoi n'existe pas |
@@ -86,9 +86,10 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Statistiques réelles (vues, contacts) | ⬜ | « Contacts » = numéros révélés |
 | Réinitialisation du mot de passe | ✅ | Lien envoyé par e-mail |
 
-### 3.3 Côté administrateur ⬜
+### 3.3 Côté administrateur 🟡
 
-File de validation des annonces, vérification des pros (numéro TAHITI), traitement des signalements, suspension de compte ou de vitrine, gestion des réservations publicitaires, statistiques globales. Aucun écran n'existe encore.
+- ✅ **File de validation des annonces** (`/admin`) : les plus anciennes d'abord ; valider, ou refuser avec un motif que l'annonceur lit dans « Mes annonces ». La base vérifie le rôle d'administrateur à chaque décision et garde qui a décidé et quand.
+- ⬜ Vérification des pros (numéro TAHITI), traitement des signalements, suspension de compte ou de vitrine, gestion des réservations publicitaires, statistiques globales.
 
 ---
 
@@ -125,7 +126,7 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 
 **Limite par particulier [Acquis]** : **5 annonces actives au plus**. Elle évite les annonces sans intérêt et empêche un professionnel de se faire passer pour un particulier. Au-delà, le particulier retire une annonce ou ouvre une vitrine pro. **[À décider]** : les annonces en attente de validation comptent-elles dans les 5 ?
 
-**Cycle de vie** : `en attente de validation` → `active` ou `refusée`. Un administrateur valide chaque annonce avant publication [Acquis]. Un refus s'accompagne d'un motif lisible par l'annonceur [Proposé].
+**Cycle de vie** : `en attente de validation` → `active` ou `refusée`. Un administrateur valide chaque annonce avant publication [Acquis]. Un refus s'accompagne d'un motif lisible par l'annonceur, de 5 à 500 caractères [Acquis].
 **À ajouter [Proposé]** : durée de vie d'une annonce (par exemple 60 jours, avec rappel avant expiration), statut `vendue`, statut `expirée`.
 
 ### 5.2 Boost [Acquis]
@@ -240,7 +241,8 @@ Hoko traite des noms, numéros de téléphone et e-mails de résidents polynési
 ### 8.1 Existant [Acquis]
 
 - **Next.js 16 + React 19 + TypeScript**, dossier `web/`. Next.js 16 diffère des versions précédentes : lire `node_modules/next/dist/docs/` avant de coder (voir `web/AGENTS.md`).
-- Données d'exemple dans `web/src/lib/data.ts` et `accounts.ts` ; règles de validation en fonctions pures dans `validation.ts` (dépôt) et `inscription.ts`.
+- Données lues dans Supabase (`annonces-donnees.ts`, `compte-donnees.ts`, `admin-donnees.ts`) ; règles en fonctions pures testées (`validation.ts`, `inscription.ts`, `annonces.ts`, `moderation.ts`).
+- **Démo client** : un second projet Supabase (« hoko-demo ») contient des annonces et des vitrines d'exemple ; le même code s'y branche avec d'autres clés (`npm run dev:demo`). Toute migration s'applique aux deux projets.
 - Actions serveur dans `web/src/app/actions.ts`.
 - Tests **Vitest** dans `web/tests/` (annonces, comptes, dépôt, inscription).
 - Polices Clash Display et Satoshi (fichiers locaux). Maquettes HTML dans `maquettes/`.

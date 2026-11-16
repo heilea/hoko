@@ -29,6 +29,7 @@ const ligne = {
   prix_xpf: 220000,
   statut: "active",
   boost_jusqu_au: null,
+  motif_refus: null,
   categories: { slug: "vehicules" },
 };
 
@@ -65,6 +66,7 @@ describe("annonces de la base dans l'espace annonceur", () => {
       vues: 0,
       contacts: 0,
       lien: "/annonces/42",
+      motif: undefined,
     });
   });
 
@@ -72,6 +74,11 @@ describe("annonces de la base dans l'espace annonceur", () => {
     for (const statut of ["en_attente_validation", "refusee", "retiree"]) {
       expect(versSuivi({ ...ligne, statut }, MAINTENANT).lien, statut).toBeUndefined();
     }
+  });
+
+  test("le motif de refus n'est montré que pour une annonce refusée", () => {
+    expect(versSuivi({ ...ligne, statut: "refusee", motif_refus: "Photos manquantes" }, MAINTENANT).motif).toBe("Photos manquantes");
+    expect(versSuivi({ ...ligne, statut: "active", motif_refus: "Ancien motif" }, MAINTENANT).motif).toBeUndefined();
   });
 
   test("le boost est actif jusqu'à sa date de fin, pas après", () => {

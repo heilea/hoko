@@ -14,7 +14,7 @@ export async function getAccountListings(compte: Account): Promise<AccountListin
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("listings")
-    .select("id, titre, prix_xpf, statut, boost_jusqu_au, categories(slug)")
+    .select("id, titre, prix_xpf, statut, boost_jusqu_au, motif_refus, categories(slug)")
     .eq("user_id", compte.id)
     .order("created_at", { ascending: false });
   if (error || !data) return [];

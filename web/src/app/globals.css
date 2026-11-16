@@ -311,6 +311,17 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 }
 .boutons { display: flex; flex-wrap: wrap; gap: 10px; }
 
+/* Administration : file des annonces à valider */
+.moderation { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.moderation-carte { display: grid; gap: 8px; min-width: 0; }
+.moderation-tete { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; justify-content: space-between; }
+.moderation-tete h2 { font-size: 20px; line-height: 26px; overflow-wrap: anywhere; }
+.moderation-carte .description { white-space: pre-line; overflow-wrap: anywhere; }
+.moderation-form { gap: 12px; }
+.moderation-form textarea { min-height: 64px; }
+.suivi-motif { grid-column: 1 / -1; color: var(--erreur); margin: 0; overflow-wrap: anywhere; }
+.statut-retiree { color: var(--muted); }
+
 /* Inscription : choix du type de compte */
 .choix { border: 0; margin: 0; padding: 0; }
 .choix legend { padding: 0; margin-bottom: 6px; font-weight: 700; }

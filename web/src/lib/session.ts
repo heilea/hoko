@@ -43,6 +43,7 @@ export const getSession = cache(async (): Promise<Account | null> => {
     email: typeof claims.email === "string" ? claims.email : "",
     telephone: profil.telephone,
     shopId,
+    admin: profil.role === "admin",
   };
 });
 

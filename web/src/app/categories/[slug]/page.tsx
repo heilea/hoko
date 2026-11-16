@@ -6,7 +6,8 @@ import { CategoryNav } from "@/components/CategoryNav";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
 import { ProDirectory } from "@/components/ProDirectory";
-import { categories, getCategory, getCategoryListings } from "@/lib/data";
+import { getCategoryListings } from "@/lib/annonces-donnees";
+import { categories, getCategory } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
 
 type Props = PageProps<"/categories/[slug]">;
@@ -49,7 +50,7 @@ async function Categorie({ params }: Pick<Props, "params">) {
   const categorie = getCategory(slug);
   if (!categorie) notFound();
 
-  const annonces = getCategoryListings(categorie.slug);
+  const annonces = await getCategoryListings(categorie.slug);
 
   return (
     <>

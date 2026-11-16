@@ -208,6 +208,8 @@ export type Database = {
           description: string
           id: number
           ile: string
+          modere_le: string | null
+          modere_par: string | null
           motif_refus: string | null
           prix_xpf: number
           shop_id: string | null
@@ -225,6 +227,8 @@ export type Database = {
           description: string
           id?: never
           ile: string
+          modere_le?: string | null
+          modere_par?: string | null
           motif_refus?: string | null
           prix_xpf: number
           shop_id?: string | null
@@ -242,6 +246,8 @@ export type Database = {
           description?: string
           id?: never
           ile?: string
+          modere_le?: string | null
+          modere_par?: string | null
           motif_refus?: string | null
           prix_xpf?: number
           shop_id?: string | null
@@ -257,6 +263,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listings_modere_par_fkey"
+            columns: ["modere_par"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -460,7 +473,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      moderer_annonce: {
+        Args: { annonce_id: number; decision: string; motif?: string }
+        Returns: undefined
+      }
+      rechercher_annonces: {
+        Args: { recherche: string }
+        Returns: {
+          boost_jusqu_au: string | null
+          category_id: number
+          commune: string
+          created_at: string
+          description: string
+          id: number
+          ile: string
+          modere_le: string | null
+          modere_par: string | null
+          motif_refus: string | null
+          prix_xpf: number
+          shop_id: string | null
+          statut: string
+          suffixe_prix: string | null
+          titre: string
+          user_id: string
+          vendeur_nom: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "listings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      voir_numero_annonce: { Args: { annonce_id: number }; Returns: string }
+      voir_numero_vitrine: { Args: { vitrine_slug: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

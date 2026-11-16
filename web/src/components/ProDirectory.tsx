@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getVerifiedPros, type Category } from "@/lib/data";
+import { getVerifiedPros } from "@/lib/annonces-donnees";
+import type { Category } from "@/lib/data";
 import { prixXpf, sigle } from "@/lib/format";
 import { Icon } from "./Icon";
 
@@ -7,8 +8,8 @@ import { Icon } from "./Icon";
  * Annuaire des pros : la porte vers le marketplace dédié aux professionnels.
  * Sur la page d'une catégorie, il met en avant les pros de cette catégorie.
  */
-export function ProDirectory({ categorie }: { categorie?: Category }) {
-  const pros = getVerifiedPros(categorie?.slug);
+export async function ProDirectory({ categorie }: { categorie?: Category }) {
+  const pros = await getVerifiedPros(categorie?.slug);
   const duSecteur = Boolean(categorie) && pros.every((pro) => pro.categorie === categorie?.slug);
   return (
     <aside className="porte" aria-label="Annuaire des pros">
@@ -16,6 +17,7 @@ export function ProDirectory({ categorie }: { categorie?: Category }) {
         <span className="label">Marketplace pro</span>
         <h2>{duSecteur ? `Pros en ${categorie?.nom}` : "Annuaire des pros"}</h2>
       </div>
+      {pros.length === 0 && <p className="small muted">Les premiers pros vérifiés apparaîtront ici.</p>}
       <ul>
         {pros.map((pro) => (
           <li key={pro.slug}>

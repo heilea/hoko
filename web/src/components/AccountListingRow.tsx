@@ -35,6 +35,11 @@ export function AccountListingRow({ annonce }: { annonce: AccountListing }) {
           <dd>{annonce.contacts}</dd>
         </div>
       </dl>
+      {annonce.motif && (
+        <p className="small suivi-motif">
+          <strong>Motif du refus :</strong> {annonce.motif}
+        </p>
+      )}
       {annonce.lien ? (
         <Link className="link suivi-lien" href={annonce.lien}>
           Voir l&apos;annonce <Icon name="fleche" />
