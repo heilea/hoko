@@ -13,6 +13,7 @@
  * Tant que les variables manquent, le site continue de tourner sur les données d'exemple.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const clePublique = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -21,15 +22,15 @@ export function supabaseConfigure(): boolean {
   return Boolean(url && clePublique);
 }
 
-let client: SupabaseClient | null = null;
+let client: SupabaseClient<Database> | null = null;
 
 /**
  * Client de lecture publique : il voit ce qu'un visiteur non connecté a le droit de voir.
  * Renvoie null si Supabase n'est pas configuré.
  */
-export function getSupabase(): SupabaseClient | null {
+export function getSupabase(): SupabaseClient<Database> | null {
   if (!url || !clePublique) return null;
   // Aucune session n'est gardée : ce client ne représente jamais un annonceur connecté
-  client ??= createClient(url, clePublique, { auth: { persistSession: false, autoRefreshToken: false } });
+  client ??= createClient<Database>(url, clePublique, { auth: { persistSession: false, autoRefreshToken: false } });
   return client;
 }

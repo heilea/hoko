@@ -4,7 +4,7 @@
  *
  * À n'appeler que côté serveur, après getSession().
  */
-import { versSuivi, type Account, type AccountListing, type LigneAnnonce, type Vitrine } from "./accounts";
+import { lireStatutVitrine, versSuivi, type Account, type AccountListing, type Vitrine } from "./accounts";
 import { MAX_ANNONCES_PRO } from "./data";
 import { creerClientServeur } from "./supabase-serveur";
 
@@ -16,8 +16,7 @@ export async function getAccountListings(compte: Account): Promise<AccountListin
     .from("listings")
     .select("id, titre, prix_xpf, statut, boost_jusqu_au, categories(slug)")
     .eq("user_id", compte.id)
-    .order("created_at", { ascending: false })
-    .returns<LigneAnnonce[]>();
+    .order("created_at", { ascending: false });
   if (error || !data) return [];
   // L'heure courante dit si un boost est encore actif (la requête est déjà attendue, voir creerClientServeur)
   const maintenant = Date.now();
@@ -49,10 +48,10 @@ export async function getVitrine(compte: Account): Promise<Vitrine | null> {
     secteur: vitrine.secteur,
     ile: vitrine.ile,
     commune: vitrine.commune,
-    presentation: vitrine.presentation ?? "",
-    horaires: vitrine.horaires ?? [],
+    presentation: vitrine.presentation,
+    horaires: vitrine.horaires,
     verifie: Boolean(vitrine.verifie),
-    statut: vitrine.statut,
+    statut: lireStatutVitrine(vitrine.statut),
     annonces: count ?? 0,
     maximum: MAX_ANNONCES_PRO,
   };

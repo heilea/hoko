@@ -22,6 +22,14 @@ const sql = readdirSync(dossier)
 const tables = [...sql.matchAll(/create table public\.(\w+)/g)].map((m) => m[1]);
 
 describe("schéma Supabase", () => {
+  test("les types générés (database.types.ts) connaissent chaque table des migrations", () => {
+    // Sinon : régénérer les types après la dernière migration (voir l'en-tête du fichier)
+    const types = readFileSync(join(import.meta.dirname, "..", "src", "lib", "database.types.ts"), "utf8");
+    for (const table of tables) {
+      expect(types, table).toMatch(new RegExp(`^ {6}${table}: \{$`, "m"));
+    }
+  });
+
   test("les tables du modèle de données sont créées", () => {
     for (const table of ["profiles", "categories", "shops", "shop_private", "listings", "photos", "boosts", "contact_reveals", "ad_slots", "customer_accounts_b2b", "purchase_orders"]) {
       expect(tables, table).toContain(table);

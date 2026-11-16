@@ -7,7 +7,15 @@
  * Ces tests portent sur les règles pures de src/lib/accounts.ts et src/lib/redirection.ts.
  */
 import { describe, expect, test } from "vitest";
-import { LIBELLE_STATUT, maximumAnnonces, peutPublier, resumer, versSuivi } from "../src/lib/accounts";
+import {
+  LIBELLE_STATUT,
+  lireStatutAnnonce,
+  lireStatutVitrine,
+  maximumAnnonces,
+  peutPublier,
+  resumer,
+  versSuivi,
+} from "../src/lib/accounts";
 import { MAX_ANNONCES_PARTICULIER, MAX_ANNONCES_PRO } from "../src/lib/data";
 import { cheminDeRetour } from "../src/lib/redirection";
 
@@ -69,6 +77,14 @@ describe("annonces de la base dans l'espace annonceur", () => {
   test("le boost est actif jusqu'à sa date de fin, pas après", () => {
     expect(versSuivi({ ...ligne, boost_jusqu_au: "2026-11-20T00:00:00Z" }, MAINTENANT).boost).toBe("actif");
     expect(versSuivi({ ...ligne, boost_jusqu_au: "2026-11-10T00:00:00Z" }, MAINTENANT).boost).toBe("aucun");
+  });
+
+  test("un statut inconnu venu de la base n'est jamais traité comme en ligne", () => {
+    expect(lireStatutAnnonce("active")).toBe("active");
+    expect(lireStatutAnnonce("publiee")).toBe("en_attente_validation");
+    expect(versSuivi({ ...ligne, statut: "publiee" }, MAINTENANT).lien).toBeUndefined();
+    expect(lireStatutVitrine("actif")).toBe("actif");
+    expect(lireStatutVitrine("ouverte")).toBe("en_attente_paiement");
   });
 
   test("chaque statut de la base a un libellé", () => {
