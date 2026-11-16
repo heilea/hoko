@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { soumettreAnnonce, type EtatDepot } from "@/app/actions";
 import { categories } from "@/lib/data";
-import { prixXpf } from "@/lib/format";
 import {
   DESCRIPTION_MAX,
   ILES,
@@ -13,14 +12,13 @@ import {
   verifierPhoto,
   type ChampAnnonce,
 } from "@/lib/validation";
-import { Icon } from "./Icon";
 
 type Photo = { id: string; nom: string; url: string };
 
 const initial: EtatDepot = { statut: "initial" };
 
-/** Formulaire de dépôt d'une annonce de particulier. */
-export function PublishForm() {
+/** Formulaire de dépôt d'une annonce de particulier connecté. `telephone` : celui de son compte. */
+export function PublishForm({ telephone }: { telephone: string }) {
   const [etat, envoyer, enCours] = useActionState(soumettreAnnonce, initial);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [erreursPhotos, setErreursPhotos] = useState<string[]>([]);
@@ -29,6 +27,7 @@ export function PublishForm() {
   const erreurs = etat.statut === "erreurs" ? etat.erreurs : {};
   const saisie = etat.statut === "erreurs" ? etat.saisie : undefined;
   const nombreErreurs = Object.keys(erreurs).length;
+  const general = etat.statut === "erreurs" ? etat.general : undefined;
 
   // Après un envoi refusé, on amène le lecteur sur le résumé des erreurs
   useEffect(() => {
@@ -74,45 +73,23 @@ export function PublishForm() {
     );
   }
 
-  if (etat.statut === "valide") {
-    const { annonce } = etat;
-    const categorie = categories.find((c) => c.slug === annonce.categorie);
+  if (etat.statut === "enregistree") {
     return (
       <div className="stack" role="status">
         <div className="avis">
           <p>
-            <strong>Votre annonce est complète, mais elle n&apos;a pas été publiée.</strong>
+            <strong>Votre annonce « {etat.titre} » est enregistrée.</strong>
           </p>
-          <p>L&apos;enregistrement des annonces n&apos;est pas encore ouvert sur Hoko. Voici l&apos;aperçu de ce qu&apos;elle donnera.</p>
+          <p>
+            Elle est en attente de validation par Hoko et apparaîtra sur le site une fois validée. Vous la retrouvez dans « Mes
+            annonces ».
+          </p>
+          {photos.length > 0 && (
+            <p className="small">Les photos ne sont pas encore envoyées : l&apos;envoi des photos arrive bientôt.</p>
+          )}
         </div>
-        <div className="annonce apercu">
-          <div className="photo">
-            {photos[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element -- aperçu local d'un fichier choisi par l'utilisateur
-              <img src={photos[0].url} alt="" />
-            ) : (
-              categorie && <Icon name={categorie.icone} />
-            )}
-          </div>
-          <div className="corps">
-            <h3>{annonce.titre}</h3>
-            <span className="price">{prixXpf(annonce.prixXpf)}</span>
-            <span className="small muted lieu">
-              <Icon name="lieu" />
-              {annonce.commune}, {annonce.ile} · {categorie?.nom}
-            </span>
-          </div>
-        </div>
-        <dl className="details">
-          <dt>Description</dt>
-          <dd className="description">{annonce.description}</dd>
-          <dt>Téléphone</dt>
-          <dd>{annonce.telephone} (affiché au clic sur « Voir le numéro »)</dd>
-          <dt>Photos</dt>
-          <dd>{photos.length > 0 ? `${photos.length} choisie${photos.length > 1 ? "s" : ""}` : "Aucune"}</dd>
-        </dl>
-        <Link className="btn btn-secondary" href="/">
-          Revenir à l&apos;accueil
+        <Link className="btn btn-secondary" href="/compte/annonces">
+          Voir mes annonces
         </Link>
       </div>
     );
@@ -131,10 +108,10 @@ export function PublishForm() {
 
   return (
     <form className="formulaire" action={envoyer} noValidate>
-      {nombreErreurs > 0 && (
+      {(nombreErreurs > 0 || general) && (
         <div className="avis avis-erreur" ref={resume} tabIndex={-1} role="alert">
           <strong>
-            {nombreErreurs > 1 ? `${nombreErreurs} champs sont à corriger` : "Un champ est à corriger"} avant de publier.
+            {general ?? `${nombreErreurs > 1 ? `${nombreErreurs} champs sont à corriger` : "Un champ est à corriger"} avant de publier.`}
           </strong>
         </div>
       )}
@@ -237,9 +214,9 @@ export function PublishForm() {
       </div>
 
       <div className="champ">
-        <label htmlFor="telephone">Votre numéro de téléphone</label>
-        <input id="telephone" name="telephone" type="tel" inputMode="tel" defaultValue={saisie?.telephone} placeholder="87 12 34 56" autoComplete="tel" {...champ("telephone")} />
-        {erreur("telephone")}
+        <span className="champ-titre">Votre numéro de téléphone</span>
+        <span>{telephone}</span>
+        <span className="small muted">Celui de votre compte. Il n&apos;apparaît qu&apos;au clic sur « Voir le numéro ».</span>
       </div>
 
       <div className="champ">
@@ -254,7 +231,7 @@ export function PublishForm() {
       </div>
 
       <button className="btn btn-primary" type="submit" disabled={enCours}>
-        {enCours ? "Vérification…" : "Publier l'annonce"}
+        {enCours ? "Enregistrement…" : "Publier l'annonce"}
       </button>
     </form>
   );

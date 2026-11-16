@@ -77,7 +77,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 | Fonction | État | Règle |
 |---|---|---|
-| Dépôt d'annonce (formulaire + validation serveur) | 🟡 | Valide les champs mais **n'enregistre rien** tant qu'il n'y a pas de base |
+| Dépôt d'annonce | 🟡 | Réservé aux particuliers connectés. L'annonce est enregistrée « en attente de validation », avec le téléphone du compte. Photos pas encore envoyées |
 | Inscription | ✅ | Particulier ou pro (5.8), avec Supabase Auth et confirmation de l'adresse par e-mail. La vitrine d'un pro est créée « en attente de paiement » |
 | Connexion par e-mail + mot de passe | ✅ | Supabase Auth, qui limite les essais. Plus de comptes de démonstration |
 | Tableau de bord, mes annonces, mon profil | 🟡 | Statuts et chiffres d'exemple |
@@ -249,11 +249,11 @@ Hoko traite des noms, numéros de téléphone et e-mails de résidents polynési
 
 | Sujet | Choix |
 |---|---|
-| Base de données | **[Acquis]** Supabase (PostgreSQL). Pas encore branché. Formule payante obligatoire en production (la formule gratuite se met en pause). Activer la sécurité par ligne (RLS) pour que chaque annonceur ne voie que ses annonces. Région à choisir après mesure de la latence depuis Tahiti |
+| Base de données | **[Acquis]** Supabase (PostgreSQL). Branché, projet en us-west-1 (Californie). Formule payante obligatoire en production (la formule gratuite se met en pause). Sécurité par ligne (RLS) active : chaque annonceur ne voit que ses annonces |
 | Authentification | **[Acquis]** Supabase Auth. Remplace `session.ts`, `session-token.ts` et les comptes de démonstration de `accounts.ts`, via `@supabase/ssr`. Prévoir la limite d'essais de connexion, un service SMTP pour les e-mails de production et la compatibilité avec Next.js 16 |
 | Stockage des photos | **[Acquis]** Supabase Storage. Règles d'accès par bucket ; le retrait des métadonnées GPS et le redimensionnement restent à écrire (le redimensionnement automatique dépend de la formule) |
 | Paiement | Voir 5.7. Passerelle carte **[À décider]** : OSB/PayZen ou NiuPay |
-| Hébergement du site | **[Acquis]** Vercel. Prix lié au trafic ; la formule gratuite interdit l'usage commercial. Même région que Supabase, choisie après mesure de la latence depuis Tahiti (côte ouest des États-Unis ou Sydney) |
+| Hébergement du site | **[Acquis]** Vercel. Prix lié au trafic ; la formule gratuite interdit l'usage commercial. Au plus près de Supabase (San Francisco), choisie après mesure de la latence depuis Tahiti (côte ouest des États-Unis ou Sydney) |
 | E-mails | **[Acquis]** Resend, branché en SMTP sur Supabase Auth : réinitialisation du mot de passe, validation d'annonce, rappel d'expiration. Exige un nom de domaine avec SPF et DKIM configurés, sinon les e-mails arrivent en courrier indésirable |
 | Recherche | **[Acquis]** PostgreSQL (Supabase) au départ : recherche plein texte en français, `unaccent` (insensible aux accents), `pg_trgm` (tolère les fautes) et index. Les annonces pro restent exclues. Typesense ou Meilisearch si le volume l'exige |
 
@@ -312,7 +312,7 @@ Classés par urgence : les premiers bloquent la phase 1. Les choix techniques so
 | 6 bis | TVA et mentions obligatoires d'une facture, à confirmer avec un expert-comptable | Phase 3 |
 | 7 | Procédure de vérification d'un pro (justificatifs TAHITI) | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |
-| 9 | Niveau de disponibilité visé et région Supabase / Vercel (après mesure de latence depuis Tahiti) | Coût et latence |
+| 9 | Niveau de disponibilité visé. Région décidée : us-west-1, Californie (125 ms depuis Tahiti, contre 236 ms pour Séoul et 261 ms pour Sydney) | Coût |
 | 10 | Nom de domaine et exploitant légal du site | Mentions légales, et **bloque l'envoi d'e-mails** (SPF, DKIM de Resend) |
 
 ---
