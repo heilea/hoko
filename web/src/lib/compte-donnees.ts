@@ -4,7 +4,6 @@
  *
  * À n'appeler que côté serveur, après getSession().
  */
-import { connection } from "next/server";
 import { versSuivi, type Account, type AccountListing, type LigneAnnonce, type Vitrine } from "./accounts";
 import { MAX_ANNONCES_PRO } from "./data";
 import { creerClientServeur } from "./supabase-serveur";
@@ -20,8 +19,7 @@ export async function getAccountListings(compte: Account): Promise<AccountListin
     .order("created_at", { ascending: false })
     .returns<LigneAnnonce[]>();
   if (error || !data) return [];
-  // L'heure courante dit si un boost est encore actif : on attend la requête avant de la lire
-  await connection();
+  // L'heure courante dit si un boost est encore actif (la requête est déjà attendue, voir creerClientServeur)
   const maintenant = Date.now();
   return data.map((ligne) => versSuivi(ligne, maintenant));
 }

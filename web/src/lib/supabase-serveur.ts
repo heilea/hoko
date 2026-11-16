@@ -10,11 +10,15 @@
  */
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 export async function creerClientServeur() {
   // Les cookies sont lus en premier, avant tout retour : c'est cette lecture qui indique à
   // Next.js que la page dépend de la requête (sinon elle serait figée à la construction).
   const magasin = await cookies();
+  // Supabase lit l'heure courante (expiration du jeton). Sans cette attente, Next.js signale
+  // « unstable value Date.now() » quand il prérend une page qui lit seulement les cookies.
+  await connection();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const cle = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !cle) return null;
