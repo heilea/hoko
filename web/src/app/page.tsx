@@ -95,7 +95,7 @@ function Annonces({ q, enAttente = false }: { q?: string; enAttente?: boolean })
       ) : annonces.length > 0 ? (
         <div className="liste">
           {annonces.map((annonce) => (
-            <ListingCard key={annonce.id} annonce={annonce} />
+            <ListingCard key={annonce.id} annonce={annonce} sansBoost />
           ))}
         </div>
       ) : (

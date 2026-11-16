@@ -69,7 +69,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 - **Tri** : de la plus récente à la plus ancienne, sur une vraie date de publication enregistrée en base (le champ texte `publiee`, du type « hier », est remplacé par une date, et le libellé est calculé à l'affichage).
 - **Limite** : 10 à 12 annonces par page (nombre exact à fixer à la construction), avec la pagination décrite en 5.9. Aujourd'hui tout s'affiche d'un coup.
-- **Boost** : il ne change pas l'ordre de l'accueil, trié uniquement par date de création. Une annonce boostée ne passe en tête que dans sa catégorie.
+- **Boost** : aucun boost sur l'accueil. Il n'en change pas l'ordre, trié uniquement par date de création, et le badge « Boost » n'y est pas affiché, recherche comprise. Une annonce boostée ne passe en tête, avec son badge, que dans sa catégorie.
 - **Exclusions** : les annonces pro n'y figurent pas, comme dans la recherche et les catégories ; les annonces `en attente de validation`, `refusée`, `vendue` ou `expirée` n'y figurent pas non plus.
 - **Recherche** : le tri par date s'applique aussi aux résultats, sauf si un tri par pertinence est choisi plus tard.
 

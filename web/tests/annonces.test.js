@@ -292,5 +292,6 @@ describe("pagination des annonces (SPEC.md, section 4 bis)", () => {
   test.todo("la recherche garde le mot cherché d'une page à l'autre (?q=pirogue&page=2)");
   test.todo("l'accueil affiche 10 à 12 annonces par page");
   test.todo("l'accueil est trié par date de création seulement : une annonce boostée n'y passe pas en tête");
+  test.todo("l'accueil et la recherche n'affichent pas le badge « Boost »");
   test.todo("les liens « Précédent » et « Suivant » n'apparaissent que s'il y a une page avant ou après");
 });
