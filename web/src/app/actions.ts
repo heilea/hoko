@@ -1,9 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { verifierIdentifiants } from "@/lib/accounts";
+import { getAccountListings, peutPublier, verifierIdentifiants } from "@/lib/accounts";
 import { getListingPhone, getProPhone } from "@/lib/data";
-import { connexionDisponible, fermerSession, ouvrirSession } from "@/lib/session";
+import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
+import { connexionDisponible, fermerSession, getSession, ouvrirSession } from "@/lib/session";
 
 export type EtatConnexion = { erreur?: string; email?: string };
 
@@ -81,6 +82,7 @@ import { validerAnnonce, type AnnonceSaisie, type AnnonceValide, type ChampAnnon
 
 export type EtatDepot =
   | { statut: "initial" }
+  | { statut: "limite"; maximum: number }
   | { statut: "erreurs"; erreurs: Partial<Record<ChampAnnonce, string>>; saisie: AnnonceSaisie }
   | { statut: "valide"; annonce: AnnonceValide };
 
@@ -93,6 +95,13 @@ export type EtatDepot =
  * validation » (l'administrateur valide les annonces, SPEC.md), puis recevoir les photos.
  */
 export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormData): Promise<EtatDepot> {
+  // Un particulier connecté qui a déjà 5 annonces actives ne peut pas en déposer une autre.
+  // Le dépôt n'exige pas encore de compte : la limite ne s'applique donc qu'aux connectés.
+  const compte = await getSession();
+  if (compte?.type === "particulier" && !peutPublier(compte, getAccountListings(compte))) {
+    return { statut: "limite", maximum: MAX_ANNONCES_PARTICULIER };
+  }
+
   const texte = (champ: string) => {
     const valeur = formulaire.get(champ);
     return typeof valeur === "string" ? valeur.slice(0, 5000) : "";

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AccountListingRow } from "@/components/AccountListingRow";
 import { Icon } from "@/components/Icon";
-import { getAccountListings, getVitrine, resumer } from "@/lib/accounts";
+import { getAccountListings, getVitrine, maximumAnnonces, peutPublier, resumer } from "@/lib/accounts";
 import { prixXpf } from "@/lib/format";
 import { getSession } from "@/lib/session";
 
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
           <dt>Annonces actives</dt>
           <dd>
             {resume.actives}
-            {vitrine && <span className="suffixe"> sur {vitrine.maximum}</span>}
+            <span className="suffixe"> sur {maximumAnnonces(compte)}</span>
           </dd>
         </div>
         <div>
@@ -80,11 +80,19 @@ export default async function DashboardPage() {
         </ul>
       </div>
 
-      {compte.type === "particulier" && (
-        <Link className="btn btn-primary bouton-seul" href="/publier">
-          Publier une annonce
-        </Link>
-      )}
+      {compte.type === "particulier" &&
+        (peutPublier(compte, annonces) ? (
+          <Link className="btn btn-primary bouton-seul" href="/publier">
+            Publier une annonce
+          </Link>
+        ) : (
+          <div className="avis">
+            <p>
+              Vous avez atteint le maximum de {maximumAnnonces(compte)} annonces actives. Retirez-en une pour en publier
+              une nouvelle.
+            </p>
+          </div>
+        ))}
     </>
   );
 }

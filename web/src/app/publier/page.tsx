@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { PublishForm } from "@/components/PublishForm";
+import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -37,6 +38,13 @@ export default function PublishPage() {
                 </dt>
                 <dd>
                   <span>Les acheteurs vous appellent directement. Votre numéro apparaît seulement au clic.</span>
+                </dd>
+                <dt>
+                  <Icon name="gratuit" />
+                  {MAX_ANNONCES_PARTICULIER} annonces actives au plus
+                </dt>
+                <dd>
+                  <span>Pour en publier une nouvelle au-delà, retirez-en une.</span>
                 </dd>
                 <dt>
                   <Icon name="boost" />

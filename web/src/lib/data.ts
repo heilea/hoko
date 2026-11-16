@@ -62,6 +62,12 @@ export type Pro = {
 /** Un pro ne peut pas avoir plus de 20 annonces actives dans sa vitrine. */
 export const MAX_ANNONCES_PRO = 20;
 
+/**
+ * Un particulier ne peut pas avoir plus de 5 annonces actives : cela évite les annonces sans
+ * intérêt et empêche un professionnel de se faire passer pour un particulier.
+ */
+export const MAX_ANNONCES_PARTICULIER = 5;
+
 export const categories: Category[] = [
   { slug: "vehicules", nom: "Véhicules", icone: "vehicules", description: "Voitures, scooters, pick-up et pièces détachées." },
   { slug: "immobilier", nom: "Immobilier", icone: "immobilier", description: "Locations, ventes et terrains, de Tahiti aux îles." },

@@ -6,7 +6,15 @@
  * des valeurs de démonstration, écrites en clair. Ne jamais y mettre un vrai mot de passe.
  * Avec une vraie base : mots de passe hachés, inscription, réinitialisation, limite d'essais.
  */
-import { getCategory, getListing, getPro, getProListings, MAX_ANNONCES_PRO, type Pro } from "./data";
+import {
+  getCategory,
+  getListing,
+  getPro,
+  getProListings,
+  MAX_ANNONCES_PARTICULIER,
+  MAX_ANNONCES_PRO,
+  type Pro,
+} from "./data";
 
 export type Account = {
   id: string;
@@ -121,6 +129,16 @@ export function getAccountListings(compte: Account): AccountListing[] {
     return [{ ...suivi, titre: annonce.titre, prixXpf: annonce.prixXpf, categorie: annonce.categorie, lien: `/annonces/${annonce.id}` }];
   });
   return [...enLigne, ...brouillonsTeva];
+}
+
+/** Nombre d'annonces actives autorisé : 5 pour un particulier, 20 pour la vitrine d'un pro. */
+export function maximumAnnonces(compte: Pick<Account, "type">): number {
+  return compte.type === "pro" ? MAX_ANNONCES_PRO : MAX_ANNONCES_PARTICULIER;
+}
+
+/** Indique si le compte peut encore publier une annonce, d'après ses annonces actives. */
+export function peutPublier(compte: Pick<Account, "type">, annonces: Pick<AccountListing, "statut">[]): boolean {
+  return annonces.filter((a) => a.statut === "active").length < maximumAnnonces(compte);
 }
 
 export type ResumeCompte = { actives: number; vues: number; contacts: number; total: number };

@@ -40,7 +40,7 @@
 | Profil | Qui | Ce qu'il fait |
 |---|---|---|
 | **Visiteur** | Toute personne, sans compte | Parcourt, cherche, consulte une annonce ou une vitrine, révèle un numéro |
-| **Particulier** | Vendeur occasionnel, avec compte | Dépose et gère ses annonces, achète un boost |
+| **Particulier** | Vendeur occasionnel, avec compte | Dépose et gère ses annonces (5 actives au plus), achète un boost |
 | **Pro** | Entreprise vérifiée (numéro TAHITI) | Ouvre une vitrine, publie jusqu'à 20 annonces, ne peut pas booster |
 | **Administrateur** | Équipe Hoko | Valide les annonces, vérifie les pros, modère, gère la publicité |
 
@@ -122,6 +122,8 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 | Téléphone | 8 chiffres, indicatif +689 accepté, enregistré au format « 87 12 34 56 » |
 | Accord | Case obligatoire : le vendeur accepte l'affichage de son numéro |
 | Photos | JPEG uniquement, 4 Mo maximum chacune ; **6 photos maximum [À confirmer]** |
+
+**Limite par particulier [Acquis]** : **5 annonces actives au plus**. Elle évite les annonces sans intérêt et empêche un professionnel de se faire passer pour un particulier. Au-delà, le particulier retire une annonce ou ouvre une vitrine pro. **[À décider]** : les annonces en attente de validation comptent-elles dans les 5 ?
 
 **Cycle de vie** : `en attente de validation` → `active` ou `refusée`. Un administrateur valide chaque annonce avant publication [Acquis]. Un refus s'accompagne d'un motif lisible par l'annonceur [Proposé].
 **À ajouter [Proposé]** : durée de vie d'une annonce (par exemple 60 jours, avec rappel avant expiration), statut `vendue`, statut `expirée`.

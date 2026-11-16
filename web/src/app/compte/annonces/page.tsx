@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AccountListingRow } from "@/components/AccountListingRow";
-import { getAccountListings, getVitrine } from "@/lib/accounts";
+import { getAccountListings, maximumAnnonces, resumer } from "@/lib/accounts";
 import { prixXpf } from "@/lib/format";
 import { getSession } from "@/lib/session";
 
@@ -16,14 +16,14 @@ export default async function AccountListingsPage() {
   if (!compte) redirect("/connexion");
 
   const annonces = getAccountListings(compte);
-  const vitrine = getVitrine(compte);
+  const actives = resumer(annonces).actives;
 
   return (
     <>
       <div className="section-head">
         <h1>Mes annonces</h1>
         <span className="muted">
-          {vitrine ? `${annonces.length} sur ${vitrine.maximum} annonces` : `${annonces.length} ${annonces.length > 1 ? "annonces" : "annonce"}`}
+          {actives} {actives > 1 ? "actives" : "active"} sur {maximumAnnonces(compte)}
         </span>
       </div>
 

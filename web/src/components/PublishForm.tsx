@@ -58,6 +58,22 @@ export function PublishForm() {
     setPhotos((actuelles) => actuelles.filter((p) => p.id !== photo.id));
   }
 
+  if (etat.statut === "limite") {
+    return (
+      <div className="stack" role="alert">
+        <div className="avis avis-erreur">
+          <p>
+            <strong>Vous avez déjà {etat.maximum} annonces actives, le maximum pour un particulier.</strong>
+          </p>
+          <p>Retirez une annonce pour en publier une nouvelle.</p>
+        </div>
+        <Link className="btn btn-secondary" href="/compte/annonces">
+          Voir mes annonces
+        </Link>
+      </div>
+    );
+  }
+
   if (etat.statut === "valide") {
     const { annonce } = etat;
     const categorie = categories.find((c) => c.slug === annonce.categorie);

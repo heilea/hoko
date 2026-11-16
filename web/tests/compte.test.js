@@ -9,10 +9,12 @@ import {
   getAccountListings,
   getComptesDemo,
   getVitrine,
+  maximumAnnonces,
+  peutPublier,
   resumer,
   verifierIdentifiants,
 } from "../src/lib/accounts";
-import { getListing, MAX_ANNONCES_PRO } from "../src/lib/data";
+import { getListing, MAX_ANNONCES_PARTICULIER, MAX_ANNONCES_PRO } from "../src/lib/data";
 import { creerJeton, DUREE_SESSION_MS, lireJeton } from "../src/lib/session-token";
 
 const SECRET = "secret-de-test";
@@ -117,6 +119,29 @@ describe("espace d'un particulier", () => {
     expect(resume.contacts).toBe(annonces.reduce((s, a) => s + a.contacts, 0));
   });
 
+  test("il a droit à 5 annonces actives au plus", () => {
+    expect(MAX_ANNONCES_PARTICULIER).toBe(5);
+    expect(maximumAnnonces(compte)).toBe(5);
+    expect(resumer(annonces).actives).toBeLessThanOrEqual(5);
+  });
+
+  test("il peut publier tant qu'il a moins de 5 annonces actives", () => {
+    const actives = (n) => Array.from({ length: n }, () => ({ statut: "active" }));
+    expect(peutPublier(compte, [])).toBe(true);
+    expect(peutPublier(compte, actives(4))).toBe(true);
+    expect(peutPublier(compte, actives(5))).toBe(false);
+    expect(peutPublier(compte, actives(6))).toBe(false);
+  });
+
+  test("les annonces refusées ou en attente ne comptent pas dans les 5", () => {
+    const annoncesMelees = [
+      ...Array.from({ length: 4 }, () => ({ statut: "active" })),
+      { statut: "refusee" },
+      { statut: "en_attente_validation" },
+    ];
+    expect(peutPublier(compte, annoncesMelees)).toBe(true);
+  });
+
   test("un particulier n'a pas de vitrine", () => {
     expect(getVitrine(compte)).toBeNull();
   });
@@ -136,6 +161,10 @@ describe("espace d'un pro", () => {
 
   test("aucune de ses annonces n'est boostée : le boost est réservé aux particuliers", () => {
     expect(annonces.every((a) => a.boost === "aucun")).toBe(true);
+  });
+
+  test("sa limite est celle de la vitrine, pas celle des particuliers", () => {
+    expect(maximumAnnonces(compte)).toBe(MAX_ANNONCES_PRO);
   });
 
   test("sa vitrine indique le nombre d'annonces et le maximum", () => {
