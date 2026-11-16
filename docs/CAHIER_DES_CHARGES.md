@@ -1,12 +1,12 @@
 # Hoko — Cahier des charges
 
-> **Version 0.1 — brouillon à valider.**
+> **Version 0.2 — brouillon à valider.**
 > Ce document fixe ce que Hoko doit faire, pour que le site grandisse dans une direction commune.
-> Il est tiré de l'état réel du dépôt (MVP au commit `c01e7f5`) et des règles déjà écrites dans le code.
+> Il est tiré de l'état réel du dépôt (MVP au commit `6cda6ac`) et de la spécification interne du projet.
 > Chaque règle est étiquetée :
 > **[Acquis]** déjà décidé et présent dans le code · **[Proposé]** proposition à confirmer · **[À décider]** question ouverte, voir section 12.
 >
-> Le code renvoie plusieurs fois à un `SPEC.md` (sections 8 et « points à décider ») qui **n'existe pas dans le dépôt**. Ce document le remplace : une fois validé, ces renvois doivent pointer ici.
+> Le code renvoie à un `SPEC.md` : c'est la spécification interne, qui n'est pas publiée dans ce dépôt. Elle reste la référence ; ce document en est la version publiée et doit toujours dire la même chose.
 
 ---
 
@@ -18,12 +18,13 @@
 
 1. Offrir aux Polynésiens un endroit simple pour vendre, acheter, louer et trouver un service, sur toutes les îles.
 2. Rester gratuit pour les particuliers.
-3. Gagner de l'argent par trois offres claires : le **boost** d'annonce, la **vitrine pro** et l'**espace publicitaire** de l'accueil.
+3. Gagner de l'argent par quatre offres claires : le **boost** d'annonce, la **vitrine pro**, l'**espace publicitaire de l'accueil** et l'**espace publicitaire d'en-tête de catégorie**.
 4. Rester rapide, lisible et utilisable sur un téléphone avec une connexion moyenne.
 
-### 1.2 Hors périmètre en V1 [Proposé]
+### 1.2 Hors périmètre en V1
 
-Messagerie interne, paiement entre acheteur et vendeur, livraison, avis et notes, application mobile native, version anglaise ou tahitienne de l'interface.
+- **[Acquis]** Messagerie interne, paiement en ligne automatisé (en V1, l'administrateur active à la main après réception des fonds), application mobile native, avis et notes, statistiques avancées.
+- **[Proposé]** Paiement entre acheteur et vendeur, livraison, version anglaise ou tahitienne de l'interface.
 
 ### 1.3 Principes qui guident les choix
 
@@ -60,7 +61,8 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Bouton « Voir le numéro » | ✅ | Numéro servi à la demande (5.4) |
 | Annuaire des pros, filtre par secteur | ✅ | Seuls les pros vérifiés y figurent |
 | Vitrine d'un pro | ✅ | Présentation, horaires, téléphone, annonces |
-| Filtres avancés (île, prix, tri) | ⬜ | [Proposé] V1.1 |
+| Liste et recherche par île | 🟡 | [Acquis] V1. Aujourd'hui, le nom de l'île est seulement reconnu dans la recherche par mot-clé |
+| Filtres avancés (prix, tri) | ⬜ | [Proposé] V1.1 |
 | Signaler une annonce | ⬜ | [Proposé] V1 : indispensable dès que le trafic grandit |
 
 #### 3.1.1 Annonces de l'accueil [Proposé]
@@ -76,7 +78,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Fonction | État | Règle |
 |---|---|---|
 | Dépôt d'annonce (formulaire + validation serveur) | 🟡 | Valide les champs mais **n'enregistre rien** tant qu'il n'y a pas de base |
-| Inscription | ⬜ | Page « bientôt disponible » |
+| Inscription (formulaire + validation serveur) | 🟡 | Particulier ou pro (5.8). Valide les champs mais **ne crée pas le compte** tant qu'il n'y a pas de base |
 | Connexion par e-mail + mot de passe | 🟡 | Session par cookie signé ; deux comptes de démonstration seulement |
 | Tableau de bord, mes annonces, mon profil | 🟡 | Statuts et chiffres d'exemple |
 | Modifier / supprimer / marquer « vendu » | ⬜ | [Proposé] V1 |
@@ -124,12 +126,13 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 **Cycle de vie** : `en attente de validation` → `active` ou `refusée`. Un administrateur valide chaque annonce avant publication [Acquis]. Un refus s'accompagne d'un motif lisible par l'annonceur [Proposé].
 **À ajouter [Proposé]** : durée de vie d'une annonce (par exemple 60 jours, avec rappel avant expiration), statut `vendue`, statut `expirée`.
 
-### 5.2 Boost [Acquis, prix à décider]
+### 5.2 Boost [Acquis]
 
-- Un boost fait remonter l'annonce **en tête de sa catégorie pendant 7 jours**.
+- Un boost fait remonter l'annonce **en tête de sa catégorie pendant 7 jours**, pour **700 XPF**.
 - Statuts : `aucun`, `en attente de paiement`, `actif`.
 - Réservé aux particuliers : **un pro ne peut pas booster**.
-- **[À décider]** : prix du boost, moyens de paiement, nombre de boosts simultanés par catégorie, remboursement.
+- Il reste « en attente de paiement » jusqu'à réception des fonds (5.7).
+- **[À décider]** : nombre de boosts simultanés par catégorie, remboursement.
 
 ### 5.3 Vitrine pro [Acquis]
 
@@ -137,7 +140,7 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 - Contenu : page à son nom (présentation, horaires, téléphone), jusqu'à **20 annonces actives**, badge « Pro vérifié », présence dans l'annuaire, sur l'accueil et dans sa catégorie.
 - Le badge n'est accordé qu'**après contrôle du numéro TAHITI**.
 - Les annonces d'un pro **vivent uniquement dans sa vitrine** : elles n'apparaissent ni dans la recherche ni dans les pages de catégorie.
-- Statuts de vitrine : `active`, `en attente de paiement`, `suspendue`.
+- Statuts de vitrine : `active`, `en attente de paiement`, `suspendue`. Pas de période d'essai en V1 : la vitrine s'active à réception de l'abonnement (5.7).
 - **[À décider]** : engagement minimum, résiliation, que devient la vitrine en cas de non-paiement, justificatifs demandés pour la vérification.
 
 ### 5.4 Contact et protection des données de contact [Acquis]
@@ -147,15 +150,53 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 - Une limite de demandes par visiteur doit empêcher le moissonnage des numéros.
 - L'e-mail de l'annonceur est privé : il ne sert qu'à la connexion et aux notifications.
 
-### 5.5 Publicité [Acquis, prix à décider]
+### 5.5 Publicité [Acquis]
 
-- Emplacement sur la page d'accueil, **vendu au mois, payé d'avance**.
+- Deux espaces, **vendus au mois, payés d'avance**, sans reconduction automatique en V1 :
+  - **page d'accueil** : 100 000 XPF par mois, un seul annonceur à la fois ;
+  - **en-tête d'une catégorie** : 45 000 XPF par mois, même tarif pour toutes les catégories en V1. L'espace est lié à la catégorie : un plombier achète « Plomberie ».
+- Un espace est exclusif (un seul annonceur) ou en rotation (plusieurs annonceurs qui alternent).
+- L'administrateur valide et programme les visuels à la main.
 - La page de réservation (`/publicite`) est un « bientôt disponible ».
-- **[À décider]** : nombre d'emplacements, tarif, format et poids des visuels, règles sur les contenus acceptés, qui valide.
+- **[À décider]** : tarif de l'exclusivité par rapport à la rotation, format et poids des visuels, règles sur les contenus acceptés.
 
 ### 5.6 Modération [Proposé]
 
 Contenus interdits à lister (armes, produits illicites, annonces trompeuses, etc.), signalement par les visiteurs, délai de traitement visé (par exemple 48 h), sanctions graduées (retrait, avertissement, suspension).
+
+### 5.7 Paiement et activation [Acquis]
+
+| Mode | Qui peut l'utiliser | Remarque |
+|---|---|---|
+| Carte bancaire | Tous les comptes | Passerelle à confirmer : OSB/PayZen ou NiuPay. Stripe n'est pas disponible pour une entreprise basée en Polynésie |
+| Virement | Tous les comptes | Numéro de commande en référence, rapproché à la main |
+| Espèces | Tous les comptes | Lieu et modalités de remise à définir |
+| Bon de commande | Pros d'une liste de comptes habituels validée par l'administrateur | Paiement à réception du virement |
+
+- Vitrine, boost et espace publicitaire restent **« en attente de paiement »** jusqu'à réception des fonds.
+- En V1, l'administrateur active à la main. Le paiement en ligne automatisé est hors V1.
+- Prix affichés en XPF, sans centimes.
+- **[À décider]** : passerelle carte retenue, lieu de remise des espèces, critères d'entrée dans la liste des comptes habituels, TVA et mentions obligatoires d'une facture (à confirmer avec un expert-comptable).
+
+### 5.8 Inscription [Acquis, valeurs à confirmer]
+
+Gratuite, réservée aux annonceurs : un acheteur n'a pas besoin de compte.
+
+| Champ | Règle |
+|---|---|
+| Type de compte | Particulier ou professionnel |
+| Prénom ou nom de l'entreprise | 2 à 60 caractères [À confirmer] |
+| E-mail | Sert à se connecter, jamais affiché. Un seul compte par e-mail |
+| Téléphone | 8 chiffres |
+| Mot de passe | 8 caractères au moins [À confirmer], saisi deux fois |
+| Pro : numéro TAHITI | Obligatoire. Format exact à vérifier ; en attendant : lettres, chiffres, espaces et tirets, 20 caractères au plus |
+| Pro : secteur, île, commune | Obligatoires |
+
+**[À décider]** : confirmation de l'e-mail par un lien, conditions d'utilisation à accepter.
+
+### 5.9 Pagination des listes [Acquis, pas encore construite]
+
+Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirmer], annonces boostées en tête de la première page seulement, pas de défilement infini. L'accueil ne montre que les 10 à 12 annonces les plus récentes.
 
 ---
 
@@ -197,33 +238,26 @@ Hoko traite des noms, numéros de téléphone et e-mails de résidents polynési
 ### 8.1 Existant [Acquis]
 
 - **Next.js 16 + React 19 + TypeScript**, dossier `web/`. Next.js 16 diffère des versions précédentes : lire `node_modules/next/dist/docs/` avant de coder (voir `web/AGENTS.md`).
-- Données d'exemple dans `web/src/lib/data.ts` et `accounts.ts` ; règles de validation en fonctions pures dans `validation.ts`.
+- Données d'exemple dans `web/src/lib/data.ts` et `accounts.ts` ; règles de validation en fonctions pures dans `validation.ts` (dépôt) et `inscription.ts`.
 - Actions serveur dans `web/src/app/actions.ts`.
-- Tests **Vitest** dans `web/tests/` (annonces, comptes, dépôt).
+- Tests **Vitest** dans `web/tests/` (annonces, comptes, dépôt, inscription).
 - Polices Clash Display et Satoshi (fichiers locaux). Maquettes HTML dans `maquettes/`.
 
-### 8.2 Choix technologiques
+### 8.2 Choix techniques
 
-**Décidés [Acquis]**
-
-| Sujet | Choix | Conséquences |
-|---|---|---|
-| Base de données | **Supabase** (PostgreSQL) | Formule payante obligatoire en production (la formule gratuite se met en pause). Activer la sécurité par ligne (RLS) pour que chaque annonceur ne voie que ses annonces. Choisir la région après mesure de la latence depuis Tahiti |
-| Authentification | **Supabase Auth** | Remplace `session.ts`, `session-token.ts` et les comptes de démonstration de `accounts.ts`, via `@supabase/ssr`. Régler la limite d'essais de connexion, brancher un service SMTP pour les e-mails de production et vérifier la compatibilité avec Next.js 16 |
-| Stockage des photos | **Supabase Storage** | Règles d'accès par bucket. Le retrait des métadonnées GPS et le redimensionnement restent à écrire (le redimensionnement automatique dépend de la formule) |
-| Hébergement du site | **Vercel** | Prix lié au trafic ; la formule gratuite interdit l'usage commercial. Placer le site dans la même région que Supabase, choisie après mesure de la latence depuis Tahiti (côte ouest des États-Unis ou Sydney) |
-| E-mails | **Resend**, branché en SMTP sur Supabase Auth | Sert à la réinitialisation du mot de passe, à la validation d'annonce et au rappel d'expiration. Exige un nom de domaine avec SPF et DKIM configurés, sinon les e-mails arrivent en courrier indésirable |
-| Recherche | **PostgreSQL (Supabase)** au départ | Recherche plein texte en français, extension `unaccent` (insensible aux accents), `pg_trgm` (tolère les fautes) et index. Les annonces pro restent exclues. Passer à Typesense ou Meilisearch si le volume ou les attentes l'exigent |
-
-**À choisir [À décider]**
-
-| Sujet | Options à comparer |
+| Sujet | Choix |
 |---|---|
-| Paiement | Solution acceptant le XPF, ou paiement en euros converti ; virement / paiement en agence pour la pub |
+| Base de données | **[Acquis]** Supabase (PostgreSQL). Pas encore branché. Formule payante obligatoire en production (la formule gratuite se met en pause). Activer la sécurité par ligne (RLS) pour que chaque annonceur ne voie que ses annonces. Région à choisir après mesure de la latence depuis Tahiti |
+| Authentification | **[Acquis]** Supabase Auth. Remplace `session.ts`, `session-token.ts` et les comptes de démonstration de `accounts.ts`, via `@supabase/ssr`. Prévoir la limite d'essais de connexion, un service SMTP pour les e-mails de production et la compatibilité avec Next.js 16 |
+| Stockage des photos | **[Acquis]** Supabase Storage. Règles d'accès par bucket ; le retrait des métadonnées GPS et le redimensionnement restent à écrire (le redimensionnement automatique dépend de la formule) |
+| Paiement | Voir 5.7. Passerelle carte **[À décider]** : OSB/PayZen ou NiuPay |
+| Hébergement du site | **[Acquis]** Vercel. Prix lié au trafic ; la formule gratuite interdit l'usage commercial. Même région que Supabase, choisie après mesure de la latence depuis Tahiti (côte ouest des États-Unis ou Sydney) |
+| E-mails | **[Acquis]** Resend, branché en SMTP sur Supabase Auth : réinitialisation du mot de passe, validation d'annonce, rappel d'expiration. Exige un nom de domaine avec SPF et DKIM configurés, sinon les e-mails arrivent en courrier indésirable |
+| Recherche | **[Acquis]** PostgreSQL (Supabase) au départ : recherche plein texte en français, `unaccent` (insensible aux accents), `pg_trgm` (tolère les fautes) et index. Les annonces pro restent exclues. Typesense ou Meilisearch si le volume l'exige |
 
 ### 8.3 Modèle de données cible [Proposé]
 
-`utilisateurs` · `annonces` (statut, boost, date d'expiration) · `photos` · `pros` (numéro TAHITI, statut de vérification, abonnement) · `contact_reveals` · `boosts` · `paiements` · `reservations_pub` · `signalements` · `journal_moderation`.
+`utilisateurs` · `annonces` (statut, boost, date d'expiration) · `photos` · `categories` · `pros` (numéro TAHITI, statut de vérification, abonnement) · `contact_reveals` · `boosts` · `bons_de_commande` (numéro unique, à mettre en référence du virement) · `comptes_habituels` (pros autorisés à payer par bon de commande) · `paiements` · `reservations_pub` (accueil ou catégorie, exclusif ou rotation) · `signalements` · `journal_moderation`.
 
 ### 8.4 Règles de développement
 
@@ -231,7 +265,7 @@ Hoko traite des noms, numéros de téléphone et e-mails de résidents polynési
 - Aucun accès aux données hors de `web/src/lib/`.
 - Toute nouvelle page publique précise son titre, sa description et son état « vide » / « chargement » / « erreur ».
 - `npm run lint` et `npm test` passent avant chaque fusion.
-- Un changement de règle métier met à jour **ce document** dans la même demande de fusion.
+- Un changement de règle métier passe d'abord par la spécification interne (`SPEC.md`), puis **ce document** est mis à jour dans la même demande de fusion.
 
 ---
 
@@ -264,16 +298,16 @@ Annonces actives · nouvelles annonces par semaine · numéros révélés par an
 
 ## 12. Points à décider
 
-Classés par urgence : les premiers bloquent la phase 1.
+Classés par urgence : les premiers bloquent la phase 1. Les choix techniques sont décidés (8.2) : Supabase, Vercel, Resend, recherche PostgreSQL. Le paiement par carte reste à trancher.
 
 | # | Question | Pourquoi c'est bloquant |
 |---|---|---|
-| 1 | ~~Base de données, authentification et photos~~ : **décidé** (Supabase). Hébergement (Vercel), e-mail (Resend) et recherche (PostgreSQL) sont aussi décidés | Rien n'est enregistré sans |
 | 2 | Îles et catégories couvertes en V1 | Structure des filtres et du SEO |
 | 3 | Nombre de photos par annonce (6 proposé) | Stockage et formulaire |
 | 4 | Durée de vie d'une annonce et règles d'expiration | Modèle de données |
 | 5 | Qui valide les annonces, et sous quel délai ? | Charge d'exploitation |
-| 6 | Prix du boost et de la publicité ; moyens de paiement | Phase 3 |
+| 6 | Passerelle carte (OSB/PayZen ou NiuPay), lieu de remise des espèces, critères des comptes habituels, tarif de la publicité exclusive | Phase 3 |
+| 6 bis | TVA et mentions obligatoires d'une facture, à confirmer avec un expert-comptable | Phase 3 |
 | 7 | Procédure de vérification d'un pro (justificatifs TAHITI) | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |
 | 9 | Niveau de disponibilité visé et région Supabase / Vercel (après mesure de latence depuis Tahiti) | Coût et latence |
@@ -286,4 +320,4 @@ Classés par urgence : les premiers bloquent la phase 1.
 
 - Une décision prise → passer l'étiquette de **[À décider]** à **[Acquis]** et retirer la ligne de la section 12.
 - Une fonction livrée → mettre à jour la colonne « État » de la section 3.
-- Remplacer les mentions `SPEC.md` du code par un renvoi à `docs/CAHIER_DES_CHARGES.md`.
+- Ce document suit la spécification interne (`SPEC.md`) : en cas d'écart, c'est elle qui fait foi et ce document est corrigé.
