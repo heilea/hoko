@@ -54,7 +54,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 | Fonction | État | Règle |
 |---|---|---|
-| Accueil : recherche, catégories, annonces récentes, pros mis en avant | ✅ | — |
+| Accueil : recherche, catégories, annonces de particuliers, pros mis en avant | 🟡 | Aujourd'hui l'accueil liste **toutes** les annonces dans l'ordre du fichier de données, sans tri par date ni limite (voir 3.1.1) |
 | Pages de catégorie | ✅ | Les annonces boostées passent en tête |
 | Recherche par mot-clé | ✅ | Insensible aux accents et à la casse. Ne renvoie **pas** les annonces pro |
 | Page d'annonce | 🟡 | Titre, prix, description, lieu, date, vendeur, annonces similaires. Photos : emplacement vide tant que l'envoi n'existe pas |
@@ -64,6 +64,14 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Liste et recherche par île | 🟡 | [Acquis] V1. Aujourd'hui, le nom de l'île est seulement reconnu dans la recherche par mot-clé |
 | Filtres avancés (prix, tri) | ⬜ | [Proposé] V1.1 |
 | Signaler une annonce | ⬜ | [Proposé] V1 : indispensable dès que le trafic grandit |
+
+#### 3.1.1 Annonces de l'accueil [Proposé]
+
+- **Tri** : de la plus récente à la plus ancienne, sur une vraie date de publication enregistrée en base (le champ texte `publiee`, du type « hier », est remplacé par une date, et le libellé est calculé à l'affichage).
+- **Limite** : un nombre fixe d'annonces par page (12 ou 24, **[À décider]**), avec « Voir plus » ou pagination. Aujourd'hui tout s'affiche d'un coup.
+- **Boost** : **[À décider]** si les annonces boostées passent en tête de l'accueil, comme dans leur catégorie. La règle écrite ne l'exige que pour la catégorie.
+- **Exclusions** : les annonces pro n'y figurent pas, comme dans la recherche et les catégories ; les annonces `en attente de validation`, `refusée`, `vendue` ou `expirée` n'y figurent pas non plus.
+- **Recherche** : le tri par date s'applique aussi aux résultats, sauf si un tri par pertinence est choisi plus tard.
 
 ### 3.2 Côté annonceur
 
@@ -210,7 +218,7 @@ Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirme
 
 ### 7.1 Sécurité
 
-- **Mots de passe** : hachés (algorithme moderne type argon2 ou bcrypt), jamais en clair. Les mots de passe de démonstration actuels dans `accounts.ts` **doivent disparaître** avant toute mise en ligne.
+- **Mots de passe** : gérés par Supabase Auth, qui les hache. Jamais en clair. Les mots de passe de démonstration actuels dans `accounts.ts` **doivent disparaître** avant toute mise en ligne.
 - **Session** : cookie `httpOnly`, `sameSite=lax`, `secure` en production, signé avec `SESSION_SECRET`. **Sans cette variable, la connexion est désactivée en production** [Acquis].
 - **Connexion** : même message d'erreur pour e-mail inconnu et mot de passe faux [Acquis] ; **limite d'essais à ajouter**.
 - **Envoi de photos** : vérifier le type réel du fichier (pas seulement l'extension), retirer les métadonnées (position GPS), stocker hors du serveur applicatif.
@@ -239,13 +247,13 @@ Hoko traite des noms, numéros de téléphone et e-mails de résidents polynési
 
 | Sujet | Choix |
 |---|---|
-| Base de données | **[Acquis]** Supabase (PostgreSQL). Pas encore branché |
-| Authentification | **[Acquis]** Supabase Auth |
-| Stockage des photos | **[Acquis]** Supabase Storage ; redimensionnement à prévoir |
+| Base de données | **[Acquis]** Supabase (PostgreSQL). Pas encore branché. Formule payante obligatoire en production (la formule gratuite se met en pause). Activer la sécurité par ligne (RLS) pour que chaque annonceur ne voie que ses annonces. Région à choisir après mesure de la latence depuis Tahiti |
+| Authentification | **[Acquis]** Supabase Auth. Remplace `session.ts`, `session-token.ts` et les comptes de démonstration de `accounts.ts`, via `@supabase/ssr`. Prévoir la limite d'essais de connexion, un service SMTP pour les e-mails de production et la compatibilité avec Next.js 16 |
+| Stockage des photos | **[Acquis]** Supabase Storage. Règles d'accès par bucket ; le retrait des métadonnées GPS et le redimensionnement restent à écrire (le redimensionnement automatique dépend de la formule) |
 | Paiement | Voir 5.7. Passerelle carte **[À décider]** : OSB/PayZen ou NiuPay |
-| Hébergement | **[À décider]** Vercel proposé ; **latence depuis le Pacifique** à mesurer |
-| E-mails | Service transactionnel (confirmation, rappel d'expiration, validation) |
-| Recherche | Recherche SQL au début, moteur dédié si le volume le demande |
+| Hébergement du site | **[Acquis]** Vercel. Prix lié au trafic ; la formule gratuite interdit l'usage commercial. Même région que Supabase, choisie après mesure de la latence depuis Tahiti (côte ouest des États-Unis ou Sydney) |
+| E-mails | **[Acquis]** Resend, branché en SMTP sur Supabase Auth : réinitialisation du mot de passe, validation d'annonce, rappel d'expiration. Exige un nom de domaine avec SPF et DKIM configurés, sinon les e-mails arrivent en courrier indésirable |
+| Recherche | **[Acquis]** PostgreSQL (Supabase) au départ : recherche plein texte en français, `unaccent` (insensible aux accents), `pg_trgm` (tolère les fautes) et index. Les annonces pro restent exclues. Typesense ou Meilisearch si le volume l'exige |
 
 ### 8.3 Modèle de données cible [Proposé]
 
@@ -290,7 +298,7 @@ Annonces actives · nouvelles annonces par semaine · numéros révélés par an
 
 ## 12. Points à décider
 
-Classés par urgence : les premiers bloquent la phase 1. Le fournisseur de base de données et d'authentification est décidé : Supabase (8.2).
+Classés par urgence : les premiers bloquent la phase 1. Les choix techniques sont décidés (8.2) : Supabase, Vercel, Resend, recherche PostgreSQL. Le paiement par carte reste à trancher.
 
 | # | Question | Pourquoi c'est bloquant |
 |---|---|---|
@@ -302,8 +310,9 @@ Classés par urgence : les premiers bloquent la phase 1. Le fournisseur de base 
 | 6 bis | TVA et mentions obligatoires d'une facture, à confirmer avec un expert-comptable | Phase 3 |
 | 7 | Procédure de vérification d'un pro (justificatifs TAHITI) | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |
-| 9 | Hébergement et niveau de disponibilité visé | Coût et latence |
-| 10 | Nom de domaine et exploitant légal du site | Mentions légales |
+| 9 | Niveau de disponibilité visé et région Supabase / Vercel (après mesure de latence depuis Tahiti) | Coût et latence |
+| 9bis | Annonces de l'accueil : nombre par page et priorité au boost (3.1.1) | Requête et pagination |
+| 10 | Nom de domaine et exploitant légal du site | Mentions légales, et **bloque l'envoi d'e-mails** (SPF, DKIM de Resend) |
 
 ---
 
