@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Galerie } from "@/components/Galerie";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
 import { RevealPhone } from "@/components/RevealPhone";
@@ -77,11 +78,14 @@ async function Fiche({ params }: Pick<Props, "params">) {
 
           <div className="cols">
             <article className="stack">
-              {/* Emplacement des photos (JPEG, 4 Mo max) : l'envoi arrive avec le dépôt d'annonce */}
-              <div className="visuel">
-                {categorie && <Icon name={categorie.icone} />}
-                <span className="small muted">Pas encore de photo</span>
-              </div>
+              {annonce.photos.length > 0 ? (
+                <Galerie photos={annonce.photos} titre={annonce.titre} />
+              ) : (
+                <div className="visuel">
+                  {categorie && <Icon name={categorie.icone} />}
+                  <span className="small muted">Pas de photo</span>
+                </div>
+              )}
 
               <div className="fiche-titre">
                 {annonce.boost && <span className="badge badge-boost">Boost</span>}

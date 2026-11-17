@@ -14,7 +14,10 @@ export type Decision = "active" | "refusee";
 export type LigneAModerer = Pick<
   Tables<"listings">,
   "id" | "titre" | "description" | "prix_xpf" | "suffixe_prix" | "ile" | "commune" | "vendeur_nom" | "created_at"
-> & { categories: Pick<Tables<"categories">, "slug" | "nom"> | null };
+> & {
+  categories: Pick<Tables<"categories">, "slug" | "nom"> | null;
+  photos: Pick<Tables<"photos">, "id" | "chemin" | "ordre">[];
+};
 
 /** Lit la décision envoyée par le formulaire. Renvoie null si elle est inconnue. */
 export function lireDecision(valeur: unknown): Decision | null {

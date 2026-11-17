@@ -6,6 +6,7 @@
  */
 import { lireStatutVitrine, versSuivi, type Account, type AccountListing, type Vitrine } from "./accounts";
 import { MAX_ANNONCES_PRO } from "./data";
+import { versPhotos, type Photo } from "./photos";
 import type { AnnonceSaisie } from "./validation";
 import { creerClientServeur } from "./supabase-serveur";
 
@@ -28,13 +29,16 @@ export async function getAccountListings(compte: Account): Promise<AccountListin
  * Une annonce du compte, avec son contenu, pour le formulaire « Modifier ».
  * Les règles d'accès de la base ne renvoient que les annonces du compte connecté.
  */
-export async function getAnnoncePourModifier(compte: Account, id: string): Promise<{ id: string; saisie: AnnonceSaisie } | null> {
+export async function getAnnoncePourModifier(
+  compte: Account,
+  id: string,
+): Promise<{ id: string; saisie: AnnonceSaisie; photos: Photo[] } | null> {
   if (!/^[1-9]\d{0,17}$/.test(id)) return null;
   const supabase = await creerClientServeur();
   if (!supabase) return null;
   const { data } = await supabase
     .from("listings")
-    .select("id, titre, description, prix_xpf, ile, commune, categories(slug)")
+    .select("id, titre, description, prix_xpf, ile, commune, categories(slug), photos(id, chemin, ordre)")
     .eq("id", Number(id))
     .eq("user_id", compte.id)
     .is("shop_id", null)
@@ -52,6 +56,7 @@ export async function getAnnoncePourModifier(compte: Account, id: string): Promi
       // Le vendeur confirme de nouveau l'affichage de son numéro à chaque envoi
       accord: false,
     },
+    photos: versPhotos(data.photos),
   };
 }
 

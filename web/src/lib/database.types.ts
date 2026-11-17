@@ -479,6 +479,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ajouter_photo: {
+        Args: { annonce_id: number; chemin: string }
+        Returns: number
+      }
       gerer_annonce: {
         Args: { annonce_id: number; geste: string }
         Returns: string
@@ -499,6 +503,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      photo_en_premier: { Args: { photo_id: number }; Returns: undefined }
       rechercher_annonces: {
         Args: { recherche: string }
         Returns: {
@@ -529,6 +534,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      supprimer_photo: { Args: { photo_id: number }; Returns: string }
       voir_numero_annonce: { Args: { annonce_id: number }; Returns: string }
       voir_numero_vitrine: { Args: { vitrine_slug: string }; Returns: string }
     }

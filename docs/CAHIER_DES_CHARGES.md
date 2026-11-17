@@ -77,7 +77,8 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 | Fonction | État | Règle |
 |---|---|---|
-| Dépôt d'annonce | 🟡 | Réservé aux particuliers connectés. L'annonce est enregistrée « en attente de validation », avec le téléphone du compte. Photos pas encore envoyées |
+| Dépôt d'annonce | ✅ | Réservé aux particuliers connectés. L'annonce est enregistrée « en attente de validation », avec le téléphone du compte, puis ses photos (6 au plus) partent une par une |
+| Photos | ✅ | Stockage Supabase. Ajout, suppression et choix de la vignette depuis « Modifier » ; une photo ajoutée renvoie l'annonce à la validation. L'administrateur voit les photos avant de valider |
 | Inscription | ✅ | Particulier ou pro (5.8), avec Supabase Auth et confirmation de l'adresse par e-mail. La vitrine d'un pro est créée « en attente de paiement » |
 | Connexion par e-mail + mot de passe | ✅ | Supabase Auth, qui limite les essais. Plus de comptes de démonstration |
 | Tableau de bord, mes annonces, mon profil | 🟡 | Statuts et chiffres d'exemple |
@@ -237,7 +238,7 @@ Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirme
 - **Mots de passe** : gérés par Supabase Auth, qui les hache. Jamais en clair. Les comptes de démonstration ont été retirés.
 - **Session** : cookie `httpOnly`, `sameSite=lax`, `secure` en production, signé avec `SESSION_SECRET`. **Sans cette variable, la connexion est désactivée en production** [Acquis].
 - **Connexion** : même message d'erreur pour e-mail inconnu et mot de passe faux [Acquis] ; **limite d'essais à ajouter**.
-- **Envoi de photos** : vérifier le type réel du fichier (pas seulement l'extension), retirer les métadonnées (position GPS), stocker hors du serveur applicatif.
+- **Envoi de photos** ✅ : le serveur vérifie le type réel du fichier (pas seulement l'extension), retire toutes les métadonnées (position GPS, modèle du téléphone) et réduit l'image (1 600 px, vignette 480 px) avec la bibliothèque sharp, puis la stocke dans Supabase Storage. Une photo par requête, pour rester sous la limite d'envoi de Vercel (4,5 Mo). Les adresses des fichiers sont publiques mais impossibles à deviner ; elles ne sont données que par les pages qui montrent l'annonce. **[À faire]** : effacer les photos 30 jours après la fin d'une annonce.
 - **Validation** : toujours côté serveur ; échapper tout texte saisi par les utilisateurs.
 - **Anti-abus** : limite de dépôts par compte et par jour, limite de révélations de numéro, protection anti-robots sur l'inscription et le dépôt.
 - **Secrets** : uniquement dans les variables d'environnement, jamais dans le dépôt.

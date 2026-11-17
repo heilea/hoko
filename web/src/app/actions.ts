@@ -191,7 +191,7 @@ export type EtatDepot =
   | { statut: "initial" }
   | { statut: "limite"; maximum: number }
   | { statut: "erreurs"; erreurs: Partial<Record<ChampAnnonce, string>>; saisie: AnnonceSaisie; general?: string }
-  | { statut: "enregistree"; titre: string };
+  | { statut: "enregistree"; titre: string; id: string };
 
 /**
  * Reçoit le formulaire de dépôt d'annonce, le vérifie, puis enregistre l'annonce dans Supabase
@@ -199,7 +199,7 @@ export type EtatDepot =
  * par l'administrateur. Le téléphone est celui du compte, gardé dans une table privée.
  *
  * Réservé aux particuliers connectés : les pros publient depuis leur vitrine.
- * À faire ensuite : recevoir les photos.
+ * Les photos partent ensuite une par une (photos-actions.ts), avec l'identifiant renvoyé.
  */
 export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormData): Promise<EtatDepot> {
   const saisie = lireSaisie(formulaire);
@@ -223,7 +223,7 @@ export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormDa
   if (!categorie) return { statut: "erreurs", erreurs: { categorie: "Choisissez une catégorie." }, saisie };
 
   // Les règles d'accès de la base imposent l'auteur et le statut « en attente de validation »
-  const { error } = await supabase.from("listings").insert({
+  const { data: creee, error } = await supabase.from("listings").insert({
     user_id: compte.id,
     category_id: categorie.id,
     titre: annonce.titre,
@@ -233,12 +233,12 @@ export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormDa
     commune: annonce.commune,
     vendeur_nom: compte.nom,
     statut: "en_attente_validation",
-  });
-  if (error) {
-    console.error("Annonce refusée par la base :", error.code);
+  }).select("id").single();
+  if (error || !creee) {
+    console.error("Annonce refusée par la base :", error?.code);
     return { statut: "erreurs", erreurs: {}, saisie, general: "L'annonce n'a pas pu être enregistrée. Réessayez dans quelques minutes." };
   }
-  return { statut: "enregistree", titre: annonce.titre };
+  return { statut: "enregistree", titre: annonce.titre, id: String(creee.id) };
 }
 
 // ───────────────────────── Gestion de ses annonces ─────────────────────────

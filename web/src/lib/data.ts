@@ -7,6 +7,7 @@
  * Catégories : à confirmer (SPEC.md, points à décider). La même liste est dans la base
  * (migration « schema ») ; `tests/schema.test.js` vérifie qu'elles restent identiques.
  */
+import type { Photo } from "./photos";
 
 export type IconName =
   | "vehicules" | "immobilier" | "emploi" | "services" | "maison" | "multimedia"
@@ -37,6 +38,8 @@ export type Listing = {
   boost: boolean;
   /** Prénom du vendeur, ou nom du pro. Son numéro est servi à part, voir getListingPhone. */
   vendeur: string;
+  /** Photos dans l'ordre : la première sert de vignette. */
+  photos: Photo[];
   /**
    * Vitrine du pro qui vend, s'il s'agit d'une annonce pro. Les annonces pro ne vivent que
    * dans la vitrine : elles n'apparaissent ni dans la recherche ni dans les catégories.

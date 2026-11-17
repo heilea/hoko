@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { PhotosAnnonce } from "@/components/PhotosAnnonce";
 import { PublishForm } from "@/components/PublishForm";
 import { getAnnoncePourModifier } from "@/lib/compte-donnees";
 import { getSession } from "@/lib/session";
@@ -29,6 +30,7 @@ export default async function EditListingPage({ params }: PageProps<"/compte/ann
           Retour à mes annonces
         </Link>
       </div>
+      <PhotosAnnonce annonceId={annonce.id} photos={annonce.photos} />
       <PublishForm telephone={compte.telephone} annonce={annonce} />
     </>
   );
