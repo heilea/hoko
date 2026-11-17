@@ -6,9 +6,15 @@
  * La connexion elle-même passe par Supabase Auth : elle se vérifie dans le navigateur, pas ici.
  * Ces tests portent sur les règles pures de src/lib/accounts.ts et src/lib/redirection.ts.
  */
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import {
+  CONFIRMATION_GESTE,
+  gestesPossibles,
+  LIBELLE_GESTE,
   LIBELLE_STATUT,
+  lireGeste,
   lireStatutAnnonce,
   lireStatutVitrine,
   maximumAnnonces,
@@ -30,7 +36,16 @@ const ligne = {
   statut: "active",
   boost_jusqu_au: null,
   motif_refus: null,
+  expire_le: "2026-12-16T12:00:00Z",
   categories: { slug: "vehicules" },
+};
+
+const dossier = join(import.meta.dirname, "..", "supabase", "migrations");
+const migrations = readdirSync(dossier).sort().map((nom) => readFileSync(join(dossier, nom), "utf8")).join("\n");
+/** Dernière version d'une fonction SQL (une migration peut la remplacer). */
+const fonctionSql = (nom) => {
+  const debut = Math.max(migrations.lastIndexOf(`create function public.${nom}(`), migrations.lastIndexOf(`create or replace function public.${nom}(`));
+  return migrations.slice(debut, migrations.indexOf("$$;", debut));
 };
 
 describe("limite d'annonces actives", () => {
@@ -67,11 +82,13 @@ describe("annonces de la base dans l'espace annonceur", () => {
       contacts: 0,
       lien: "/annonces/42",
       motif: undefined,
+      finLe: "16 décembre",
+      gestes: ["vendue", "modifier", "retirer"],
     });
   });
 
   test("une annonce qui n'est pas active n'a pas de lien", () => {
-    for (const statut of ["en_attente_validation", "refusee", "retiree"]) {
+    for (const statut of ["en_attente_validation", "refusee", "retiree", "vendue"]) {
       expect(versSuivi({ ...ligne, statut }, MAINTENANT).lien, statut).toBeUndefined();
     }
   });
@@ -95,7 +112,7 @@ describe("annonces de la base dans l'espace annonceur", () => {
   });
 
   test("chaque statut de la base a un libellé", () => {
-    for (const statut of ["active", "en_attente_validation", "refusee", "retiree"]) {
+    for (const statut of ["active", "en_attente_validation", "refusee", "retiree", "vendue", "expiree"]) {
       expect(LIBELLE_STATUT[statut], statut).toBeTruthy();
     }
   });
@@ -103,6 +120,76 @@ describe("annonces de la base dans l'espace annonceur", () => {
   test("le résumé compte les annonces actives, les vues et les contacts", () => {
     const annonces = [versSuivi(ligne, MAINTENANT), versSuivi({ ...ligne, id: 43, statut: "refusee" }, MAINTENANT)];
     expect(resumer(annonces)).toEqual({ actives: 1, vues: 0, contacts: 0, total: 2 });
+  });
+});
+
+describe("vie d'une annonce : 30 jours, vendue, retirée, republiée (SPEC.md, 4 quinquies)", () => {
+  test("une annonce active dont la date de fin est passée est expirée, sans lien public", () => {
+    const expiree = versSuivi({ ...ligne, expire_le: "2026-11-15T12:00:00Z" }, MAINTENANT);
+    expect(expiree.statut).toBe("expiree");
+    expect(expiree.lien).toBeUndefined();
+    expect(expiree.finLe).toBe("15 novembre");
+  });
+
+  test("une annonce expirée ne compte plus dans les 5 en ligne", () => {
+    const annonces = [...Array.from({ length: 4 }, (_, i) => versSuivi({ ...ligne, id: i }, MAINTENANT)), versSuivi({ ...ligne, id: 9, expire_le: "2026-11-01T00:00:00Z" }, MAINTENANT)];
+    expect(peutPublier({ type: "particulier" }, annonces)).toBe(true);
+    expect(resumer(annonces).actives).toBe(4);
+  });
+
+  test("une annonce de vitrine, sans date de fin, reste en ligne", () => {
+    expect(versSuivi({ ...ligne, expire_le: null }, MAINTENANT).statut).toBe("active");
+  });
+
+  test("chaque état propose un ou plusieurs gestes simples, le plus utile en premier", () => {
+    expect(gestesPossibles("active")[0]).toBe("vendue");
+    expect(gestesPossibles("en_attente_validation")).toEqual(["modifier", "retirer"]);
+    expect(gestesPossibles("refusee")).toEqual(["modifier"]);
+    for (const statut of ["vendue", "retiree", "expiree"]) expect(gestesPossibles(statut)[0], statut).toBe("republier");
+    for (const statut of Object.keys(LIBELLE_STATUT)) {
+      for (const geste of gestesPossibles(statut)) expect(LIBELLE_GESTE[geste], geste).toBeTruthy();
+    }
+  });
+
+  test("seuls les gestes connus sont lus dans un formulaire", () => {
+    expect(lireGeste("vendue")).toBe("vendue");
+    expect(lireGeste("republier")).toBe("republier");
+    for (const piege of ["modifier", "supprimer", "", null, undefined, 3]) expect(lireGeste(piege), String(piege)).toBeNull();
+  });
+
+  test("chaque résultat de la base a un message de confirmation", () => {
+    for (const fait of ["vendue", "retiree", "active", "en_attente_validation", "modifiee"]) expect(CONFIRMATION_GESTE[fait], fait).toBeTruthy();
+  });
+
+  test("le public ne voit pas une annonce expirée, ni son numéro", () => {
+    expect(migrations).toContain("(statut = 'active' and (expire_le is null or expire_le > now()))");
+    expect(fonctionSql("voir_numero_annonce")).toContain("l.expire_le is null or l.expire_le > now()");
+    expect(fonctionSql("rechercher_annonces")).toContain("l.expire_le is null or l.expire_le > now()");
+  });
+
+  test("la validation donne 30 jours aux annonces de particuliers", () => {
+    expect(fonctionSql("moderer_annonce")).toContain("now() + interval '30 days'");
+  });
+
+  test("les gestes de l'annonceur ne portent que sur ses propres annonces", () => {
+    expect(fonctionSql("gerer_annonce")).toContain("user_id = (select auth.uid())");
+    expect(fonctionSql("modifier_annonce")).toContain("l.user_id = (select auth.uid())");
+  });
+
+  test("une annonce modifiée repasse en attente de validation", () => {
+    const sql = fonctionSql("modifier_annonce");
+    expect(sql).toContain("statut = 'en_attente_validation'");
+    expect(sql).toContain("expire_le = null");
+  });
+
+  test("l'annonceur ne peut plus écrire directement dans ses annonces", () => {
+    expect(migrations).toContain("revoke update (category_id, titre, description, prix_xpf, suffixe_prix, ile, commune) on public.listings from authenticated;");
+  });
+
+  test("une annonce republiée compte de nouveau dans la limite de 5", () => {
+    const sql = fonctionSql("verifier_limite_annonces");
+    expect(sql).toContain("deja_en_ligne");
+    expect(migrations).toContain("before insert or update of statut, expire_le on public.listings");
   });
 });
 

@@ -206,6 +206,7 @@ export type Database = {
           commune: string
           created_at: string
           description: string
+          expire_le: string | null
           id: number
           ile: string
           modere_le: string | null
@@ -215,6 +216,7 @@ export type Database = {
           shop_id: string | null
           statut: string
           suffixe_prix: string | null
+          termine_le: string | null
           titre: string
           user_id: string
           vendeur_nom: string
@@ -225,6 +227,7 @@ export type Database = {
           commune: string
           created_at?: string
           description: string
+          expire_le?: string | null
           id?: never
           ile: string
           modere_le?: string | null
@@ -234,6 +237,7 @@ export type Database = {
           shop_id?: string | null
           statut?: string
           suffixe_prix?: string | null
+          termine_le?: string | null
           titre: string
           user_id: string
           vendeur_nom: string
@@ -244,6 +248,7 @@ export type Database = {
           commune?: string
           created_at?: string
           description?: string
+          expire_le?: string | null
           id?: never
           ile?: string
           modere_le?: string | null
@@ -253,6 +258,7 @@ export type Database = {
           shop_id?: string | null
           statut?: string
           suffixe_prix?: string | null
+          termine_le?: string | null
           titre?: string
           user_id?: string
           vendeur_nom?: string
@@ -473,8 +479,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gerer_annonce: {
+        Args: { annonce_id: number; geste: string }
+        Returns: string
+      }
       moderer_annonce: {
         Args: { annonce_id: number; decision: string; motif?: string }
+        Returns: undefined
+      }
+      modifier_annonce: {
+        Args: {
+          annonce_id: number
+          categorie: string
+          commune: string
+          description: string
+          ile: string
+          prix_xpf: number
+          titre: string
+        }
         Returns: undefined
       }
       rechercher_annonces: {
@@ -485,6 +507,7 @@ export type Database = {
           commune: string
           created_at: string
           description: string
+          expire_le: string | null
           id: number
           ile: string
           modere_le: string | null
@@ -494,6 +517,7 @@ export type Database = {
           shop_id: string | null
           statut: string
           suffixe_prix: string | null
+          termine_le: string | null
           titre: string
           user_id: string
           vendeur_nom: string

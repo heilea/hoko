@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { soumettreAnnonce, type EtatDepot } from "@/app/actions";
+import { modifierAnnonce, soumettreAnnonce, type EtatDepot } from "@/app/actions";
 import { categories } from "@/lib/data";
 import {
   DESCRIPTION_MAX,
@@ -10,6 +10,7 @@ import {
   PHOTOS_MAX,
   TITRE_MAX,
   verifierPhoto,
+  type AnnonceSaisie,
   type ChampAnnonce,
 } from "@/lib/validation";
 
@@ -17,15 +18,18 @@ type Photo = { id: string; nom: string; url: string };
 
 const initial: EtatDepot = { statut: "initial" };
 
-/** Formulaire de dépôt d'une annonce de particulier connecté. `telephone` : celui de son compte. */
-export function PublishForm({ telephone }: { telephone: string }) {
-  const [etat, envoyer, enCours] = useActionState(soumettreAnnonce, initial);
+/**
+ * Formulaire de dépôt d'une annonce de particulier connecté. `telephone` : celui de son compte.
+ * Avec `annonce` : formulaire « Modifier », prérempli ; l'annonce repasse alors en validation.
+ */
+export function PublishForm({ telephone, annonce }: { telephone: string; annonce?: { id: string; saisie: AnnonceSaisie } }) {
+  const [etat, envoyer, enCours] = useActionState(annonce ? modifierAnnonce : soumettreAnnonce, initial);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [erreursPhotos, setErreursPhotos] = useState<string[]>([]);
   const resume = useRef<HTMLDivElement>(null);
 
   const erreurs = etat.statut === "erreurs" ? etat.erreurs : {};
-  const saisie = etat.statut === "erreurs" ? etat.saisie : undefined;
+  const saisie = etat.statut === "erreurs" ? etat.saisie : annonce?.saisie;
   const nombreErreurs = Object.keys(erreurs).length;
   const general = etat.statut === "erreurs" ? etat.general : undefined;
 
@@ -108,6 +112,12 @@ export function PublishForm({ telephone }: { telephone: string }) {
 
   return (
     <form className="formulaire" action={envoyer} noValidate>
+      {annonce && <input type="hidden" name="id" value={annonce.id} />}
+      {annonce && (
+        <div className="avis">
+          <p>Après modification, Hoko vérifie de nouveau l&apos;annonce : elle quitte le site le temps de la vérification.</p>
+        </div>
+      )}
       {(nombreErreurs > 0 || general) && (
         <div className="avis avis-erreur" ref={resume} tabIndex={-1} role="alert">
           <strong>
@@ -231,7 +241,7 @@ export function PublishForm({ telephone }: { telephone: string }) {
       </div>
 
       <button className="btn btn-primary" type="submit" disabled={enCours}>
-        {enCours ? "Enregistrement…" : "Publier l'annonce"}
+        {enCours ? "Enregistrement…" : annonce ? "Envoyer les modifications" : "Publier l'annonce"}
       </button>
     </form>
   );

@@ -81,7 +81,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Inscription | ✅ | Particulier ou pro (5.8), avec Supabase Auth et confirmation de l'adresse par e-mail. La vitrine d'un pro est créée « en attente de paiement » |
 | Connexion par e-mail + mot de passe | ✅ | Supabase Auth, qui limite les essais. Plus de comptes de démonstration |
 | Tableau de bord, mes annonces, mon profil | 🟡 | Statuts et chiffres d'exemple |
-| Modifier / supprimer / marquer « vendu » | ⬜ | [Proposé] V1 |
+| Modifier / retirer / marquer « vendue » / republier | ⬜ | [Acquis] V1, règles en 5.1 |
 | Achat d'un boost | ⬜ | Statut « en attente de paiement » déjà modélisé |
 | Statistiques réelles (vues, contacts) | ⬜ | « Contacts » = numéros révélés |
 | Réinitialisation du mot de passe | ✅ | Lien envoyé par e-mail |
@@ -127,7 +127,20 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 **Limite par particulier [Acquis]** : **5 annonces actives au plus**. Elle évite les annonces sans intérêt et empêche un professionnel de se faire passer pour un particulier. Au-delà, le particulier retire une annonce ou ouvre une vitrine pro. **[À décider]** : les annonces en attente de validation comptent-elles dans les 5 ?
 
 **Cycle de vie** : `en attente de validation` → `active` ou `refusée`. Un administrateur valide chaque annonce avant publication [Acquis]. Un refus s'accompagne d'un motif lisible par l'annonceur, de 5 à 500 caractères [Acquis].
-**À ajouter [Proposé]** : durée de vie d'une annonce (par exemple 60 jours, avec rappel avant expiration), statut `vendue`, statut `expirée`.
+
+**Durée et gestion par l'annonceur [Acquis]** : la gestion doit rester simple, chaque annonce de « Mes annonces » montre son état, sa date de fin et un ou deux boutons clairs.
+
+| Action ou événement | Effet |
+|---|---|
+| Validation | L'annonce est en ligne pour **30 jours**, comptés à partir de la validation |
+| Marquer « vendue » | Elle quitte le site tout de suite et libère une des 5 places ; pas de badge « Vendu » public |
+| Retirer | Même effet, sans être vendue |
+| Fin des 30 jours | Statut `expirée` : elle quitte le site et libère sa place |
+| Republier (expirée, retirée ou vendue) | 30 nouveaux jours, sans nouvelle validation si le contenu n'a pas changé ; dans la limite de 5 annonces en ligne |
+| Modifier le contenu ou les photos | Retour **en attente de validation** ; à la validation, 30 jours repartent |
+| Boost qui dépasse la fin | La fin de l'annonce est repoussée jusqu'à la fin du boost |
+
+Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À confirmer]**. Rappel par e-mail avant expiration : avec Resend. **[À décider]** : durée des annonces pro, qui suivent aujourd'hui leur vitrine.
 
 ### 5.2 Boost [Acquis]
 
@@ -308,7 +321,6 @@ Classés par urgence : les premiers bloquent la phase 1. Les choix techniques so
 |---|---|---|
 | 2 | Îles et catégories couvertes en V1 | Structure des filtres et du SEO |
 | 3 | Nombre de photos par annonce (6 proposé) | Stockage et formulaire |
-| 4 | Durée de vie d'une annonce et règles d'expiration | Modèle de données |
 | 5 | Qui valide les annonces, et sous quel délai ? | Charge d'exploitation |
 | 6 | Passerelle carte (OSB/PayZen ou NiuPay), lieu de remise des espèces, critères des comptes habituels, tarif de la publicité exclusive | Phase 3 |
 | 6 bis | TVA et mentions obligatoires d'une facture, à confirmer avec un expert-comptable | Phase 3 |

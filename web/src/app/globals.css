@@ -374,12 +374,18 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 .suivi-chiffres { margin: 0; grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 32px; border-top: 1px solid var(--border); padding-top: 12px; }
 .suivi-chiffres dt { color: var(--muted); }
 .suivi-chiffres dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
-.suivi-lien { grid-column: 2; grid-row: 1; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.suivi-lien svg { width: 16px; height: 16px; }
+/* Boutons de chaque annonce : lien public à gauche, gestes à droite */
+.suivi-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.suivi-actions > .link { display: inline-flex; align-items: center; gap: 6px; }
+.suivi-actions > .link svg { width: 16px; height: 16px; }
+.suivi-actions .boutons { margin-left: auto; }
+.btn-petit { padding: 0 14px; }
 .badge-statut { border: 1px solid currentColor; background: var(--bg); }
 .statut-active { color: var(--succes); }
 .statut-en_attente_validation { color: var(--attente); }
 .statut-refusee { color: var(--erreur); }
+.statut-vendue { color: var(--marque); }
+.statut-expiree { color: var(--muted); }
 .badge-attente { background: #fbefd0; color: var(--attente); }
 
 /* Pages à venir et page introuvable */
@@ -392,7 +398,6 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .compte-nav a, .compte-nav button { width: auto; }
   .compte-nav form { border-top: 0; margin-top: 0; padding-top: 0; }
   .suivi { grid-template-columns: minmax(0, 1fr); }
-  .suivi-lien { grid-column: 1; grid-row: auto; }
   .porte, .achat { position: static; }
 }
 @media (max-width: 640px) {

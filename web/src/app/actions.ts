@@ -2,7 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { peutPublier } from "@/lib/accounts";
+import { lireGeste, peutPublier } from "@/lib/accounts";
 import { getAccountListings } from "@/lib/compte-donnees";
 import { getListingPhone, getProPhone, TAG_ANNONCES } from "@/lib/annonces-donnees";
 import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
@@ -202,15 +202,7 @@ export type EtatDepot =
  * À faire ensuite : recevoir les photos.
  */
 export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormData): Promise<EtatDepot> {
-  const saisie: AnnonceSaisie = {
-    titre: lire(formulaire, "titre", 5000),
-    categorie: lire(formulaire, "categorie", 5000),
-    prix: lire(formulaire, "prix", 5000),
-    description: lire(formulaire, "description", 5000),
-    ile: lire(formulaire, "ile", 5000),
-    commune: lire(formulaire, "commune", 5000),
-    accord: formulaire.get("accord") === "on",
-  };
+  const saisie = lireSaisie(formulaire);
 
   // La page cache le formulaire aux visiteurs et aux pros, mais l'action se protège elle-même
   const compte = await getSession();
@@ -247,6 +239,86 @@ export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormDa
     return { statut: "erreurs", erreurs: {}, saisie, general: "L'annonce n'a pas pu être enregistrée. Réessayez dans quelques minutes." };
   }
   return { statut: "enregistree", titre: annonce.titre };
+}
+
+// ───────────────────────── Gestion de ses annonces ─────────────────────────
+
+/** Lit le formulaire de dépôt ou de modification, tronqué pour ne jamais traiter un envoi démesuré. */
+function lireSaisie(formulaire: FormData): AnnonceSaisie {
+  return {
+    titre: lire(formulaire, "titre", 5000),
+    categorie: lire(formulaire, "categorie", 5000),
+    prix: lire(formulaire, "prix", 5000),
+    description: lire(formulaire, "description", 5000),
+    ile: lire(formulaire, "ile", 5000),
+    commune: lire(formulaire, "commune", 5000),
+    accord: formulaire.get("accord") === "on",
+  };
+}
+
+/**
+ * Modifie une annonce du compte connecté. Elle repasse en attente de validation (fonction
+ * `modifier_annonce` de la base, qui vérifie aussi que l'annonce appartient au compte).
+ */
+export async function modifierAnnonce(_precedent: EtatDepot, formulaire: FormData): Promise<EtatDepot> {
+  const saisie = lireSaisie(formulaire);
+  const id = Number(lire(formulaire, "id", 20));
+
+  const compte = await getSession();
+  if (!compte || compte.type !== "particulier") {
+    return { statut: "erreurs", erreurs: {}, saisie, general: "Connectez-vous avec votre compte pour modifier cette annonce." };
+  }
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return { statut: "erreurs", erreurs: {}, saisie, general: "Cette annonce est introuvable." };
+  }
+
+  const resultat = validerAnnonce(saisie);
+  if (!resultat.ok) return { statut: "erreurs", erreurs: resultat.erreurs, saisie };
+  const { annonce } = resultat;
+
+  const supabase = await creerClientServeur();
+  if (!supabase) return { statut: "erreurs", erreurs: {}, saisie, general: INDISPONIBLE };
+  const { error } = await supabase.rpc("modifier_annonce", {
+    annonce_id: id,
+    categorie: annonce.categorie,
+    titre: annonce.titre,
+    description: annonce.description,
+    prix_xpf: annonce.prixXpf,
+    ile: annonce.ile,
+    commune: annonce.commune,
+  });
+  if (error) {
+    console.error("Modification refusée par la base :", error.code);
+    const general = error.code === "P0002" ? "Cette annonce est introuvable." : "L'annonce n'a pas pu être modifiée. Réessayez dans quelques minutes.";
+    return { statut: "erreurs", erreurs: {}, saisie, general };
+  }
+  // L'annonce quitte le site le temps de la vérification
+  updateTag(TAG_ANNONCES);
+  redirect("/compte/annonces?fait=modifiee");
+}
+
+/**
+ * Marquer vendue, retirer ou republier une annonce, depuis « Mes annonces ».
+ * La base vérifie que l'annonce appartient au compte, que le geste est permis dans son état,
+ * et la limite de 5 annonces en ligne (fonction `gerer_annonce`).
+ */
+export async function gererAnnonce(formulaire: FormData): Promise<void> {
+  const id = Number(lire(formulaire, "id", 20));
+  const geste = lireGeste(formulaire.get("geste"));
+  const compte = await getSession();
+  if (!compte) redirect("/connexion");
+  if (!Number.isSafeInteger(id) || id <= 0 || !geste) redirect("/compte/annonces?erreur=geste");
+
+  const supabase = await creerClientServeur();
+  if (!supabase) redirect("/compte/annonces?erreur=indisponible");
+  const { data, error } = await supabase.rpc("gerer_annonce", { annonce_id: id, geste });
+  if (error) {
+    console.error("Geste refusé par la base :", error.code);
+    redirect(`/compte/annonces?erreur=${error.code === "23514" ? "limite" : "geste"}`);
+  }
+  // Les pages publiques relisent aussitôt les annonces
+  updateTag(TAG_ANNONCES);
+  redirect(`/compte/annonces?fait=${data}`);
 }
 
 // ───────────────────────── Validation des annonces (administrateur) ─────────────────────────

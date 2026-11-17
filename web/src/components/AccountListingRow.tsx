@@ -1,12 +1,35 @@
 import Link from "next/link";
-import { LIBELLE_BOOST, LIBELLE_STATUT, type AccountListing } from "@/lib/accounts";
+import { gererAnnonce } from "@/app/actions";
+import { LIBELLE_BOOST, LIBELLE_GESTE, LIBELLE_STATUT, type AccountListing } from "@/lib/accounts";
 import { getCategory } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
 import { Icon } from "./Icon";
 
-/** Une annonce dans l'espace de son propriétaire : statut, chiffres et lien vers la page publique. */
-export function AccountListingRow({ annonce }: { annonce: AccountListing }) {
+/** Phrase courte qui dit où en est l'annonce, sous son titre. */
+function etat(annonce: AccountListing): string | null {
+  switch (annonce.statut) {
+    case "active":
+      return annonce.finLe ? `En ligne jusqu'au ${annonce.finLe}` : "En ligne";
+    case "expiree":
+      return `Expirée le ${annonce.finLe ?? "—"} : republiez-la pour 30 jours de plus.`;
+    case "en_attente_validation":
+      return "Hoko la vérifie avant de la mettre en ligne.";
+    case "vendue":
+    case "retiree":
+      return "Plus en ligne. Vous pouvez la republier.";
+    default:
+      return null;
+  }
+}
+
+/**
+ * Une annonce dans l'espace de son propriétaire : état, date de fin, chiffres, et les boutons
+ * possibles (marquer vendue, modifier, retirer, republier). `gestes` : faux pour un pro, dont
+ * les annonces se gèrent depuis la vitrine.
+ */
+export function AccountListingRow({ annonce, gestes = true }: { annonce: AccountListing; gestes?: boolean }) {
   const categorie = getCategory(annonce.categorie);
+  const phrase = etat(annonce);
   return (
     <li className="suivi">
       <div className="suivi-corps">
@@ -20,6 +43,7 @@ export function AccountListingRow({ annonce }: { annonce: AccountListing }) {
             </span>
           )}
         </span>
+        {phrase && <span className="small muted">{phrase}</span>}
       </div>
       <dl className="suivi-chiffres small">
         <div>
@@ -37,16 +61,38 @@ export function AccountListingRow({ annonce }: { annonce: AccountListing }) {
       </dl>
       {annonce.motif && (
         <p className="small suivi-motif">
-          <strong>Motif du refus :</strong> {annonce.motif}
+          <strong>Motif du refus :</strong> {annonce.motif} Corrigez l&apos;annonce puis renvoyez-la.
         </p>
       )}
-      {annonce.lien ? (
-        <Link className="link suivi-lien" href={annonce.lien}>
-          Voir l&apos;annonce <Icon name="fleche" />
-        </Link>
-      ) : (
-        <span className="small muted suivi-lien">Pas encore en ligne</span>
-      )}
+      <div className="suivi-actions">
+        {annonce.lien && (
+          <Link className="link" href={annonce.lien}>
+            Voir l&apos;annonce <Icon name="fleche" />
+          </Link>
+        )}
+        {gestes && annonce.gestes.length > 0 && (
+          <form action={gererAnnonce} className="boutons">
+            <input type="hidden" name="id" value={annonce.id} />
+            {annonce.gestes.map((geste, rang) =>
+              geste === "modifier" ? (
+                <Link key={geste} className="btn btn-secondary btn-petit" href={`/compte/annonces/${annonce.id}/modifier`}>
+                  {LIBELLE_GESTE.modifier}
+                </Link>
+              ) : (
+                <button
+                  key={geste}
+                  className={`btn btn-petit ${rang === 0 ? "btn-primary" : "btn-secondary"}`}
+                  type="submit"
+                  name="geste"
+                  value={geste}
+                >
+                  {LIBELLE_GESTE[geste]}
+                </button>
+              ),
+            )}
+          </form>
+        )}
+      </div>
     </li>
   );
 }
