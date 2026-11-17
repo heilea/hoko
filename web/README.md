@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hoko : site web
 
-## Getting Started
+Petites annonces pour la Polynésie française. Next.js 16 (App Router), TypeScript, Supabase (base de données et comptes), hébergé sur Vercel.
 
-First, run the development server:
+## Lancer en local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # puis remplir les valeurs
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Autres commandes :
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Commande | Rôle |
+|---|---|
+| `npm test` | Tests (Vitest) |
+| `npm run lint` | Vérification du code |
+| `npm run build` | Construction de production |
+| `npm run dev:demo` | Démo client sur http://localhost:3001, branchée sur la base de démo (fichier `.env.demo`) |
+| `npm run supabase:verifier` | Vérifie la connexion à la base |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Bases Supabase
 
-## Learn More
+Deux projets Supabase, dans la région us-west-1 :
 
-To learn more about Next.js, take a look at the following resources:
+- **hoko** : la vraie base ;
+- **hoko-demo** : la base de démonstration, remplie une seule fois avec `supabase/demo/donnees-demo.sql`. Ce fichier ne doit jamais être exécuté sur la vraie base.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Le schéma est dans `supabase/migrations/`. Toute nouvelle migration s'applique **aux deux projets**, puis les types de `src/lib/database.types.ts` sont régénérés.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Mise en ligne sur Vercel
 
-## Deploy on Vercel
+Deux projets Vercel, construits à partir du même dépôt. Chaque fusion sur `main` les remet à jour.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Projet Vercel | Base Supabase | Adresse |
+|---|---|---|
+| `hoko` | hoko | https://hoko-five.vercel.app |
+| `hoko-demo` | hoko-demo | https://hoko-demo.vercel.app |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Réglages de chaque projet Vercel
+
+- **Root Directory** : `web`. Sans ce réglage, la construction échoue.
+- **Variables d'environnement** :
+  - `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` : ceux de la base correspondante ;
+  - `SITE_URL` : l'adresse fixe du projet, avec `https://` et sans `/` final.
+  - Ni la clé secrète de Supabase ni `HOKO_DIST_DIR`, qui ne sert qu'en local.
+- Après une modification de variable : **Redeploy**. Une variable ne compte qu'à partir du déploiement suivant.
+- L'adresse fixe se trouve dans **Settings > Domains**. Les adresses propres à chaque déploiement (`hoko-xxxx.vercel.app`) changent à chaque fois : ne pas les partager.
+
+### Réglages de chaque projet Supabase
+
+Dans **Authentication > URL Configuration** :
+
+- **Site URL** : l'adresse fixe du site ;
+- **Redirect URLs** : `https://<adresse du site>/**`, et `http://localhost:3000/**` pour travailler en local.
+
+Sans le `/**` final, Supabase refuse l'adresse de retour (`/auth/confirmation?suite=…`) et renvoie sur l'accueil : le lien de confirmation ou de nouveau mot de passe ne mène plus à la bonne page.
+
+### Limites actuelles des e-mails
+
+L'envoi intégré de Supabase sert pour l'instant :
+
+- il n'écrit qu'aux membres de l'équipe Supabase, et seulement quelques e-mails par heure ;
+- ses modèles d'e-mail ne se modifient pas. Le lien reçu doit donc être ouvert dans le navigateur qui a fait la demande, puisque la vérification passe par un cookie.
+
+Avant l'ouverture au public : brancher Resend avec le nom de domaine de Hoko (SMTP personnalisé). Il faudra ensuite adapter les modèles pour que les liens marchent depuis n'importe quel appareil, et mettre à jour `SITE_URL` et les adresses de retour.
