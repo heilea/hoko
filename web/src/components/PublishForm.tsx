@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { soumettreAnnonce, type EtatDepot } from "@/app/actions";
+import { modifierAnnonce, soumettreAnnonce, type EtatDepot } from "@/app/actions";
+import { ajouterPhoto } from "@/app/photos-actions";
 import { categories } from "@/lib/data";
 import {
   DESCRIPTION_MAX,
@@ -10,22 +11,56 @@ import {
   PHOTOS_MAX,
   TITRE_MAX,
   verifierPhoto,
+  type AnnonceSaisie,
   type ChampAnnonce,
 } from "@/lib/validation";
 
-type Photo = { id: string; nom: string; url: string };
+/** Photo choisie, gardée dans le navigateur jusqu'à l'enregistrement de l'annonce. */
+type Photo = { id: string; nom: string; url: string; fichier: File };
+
+/** Envoi des photos après l'enregistrement : combien sont parties, et les refus. */
+type Envoi = { faites: number; total: number; erreurs: string[]; fini: boolean };
 
 const initial: EtatDepot = { statut: "initial" };
 
-/** Formulaire de dépôt d'une annonce de particulier connecté. `telephone` : celui de son compte. */
-export function PublishForm({ telephone }: { telephone: string }) {
-  const [etat, envoyer, enCours] = useActionState(soumettreAnnonce, initial);
+/**
+ * Formulaire de dépôt d'une annonce de particulier connecté. `telephone` : celui de son compte.
+ * Avec `annonce` : formulaire « Modifier », prérempli ; l'annonce repasse alors en validation.
+ */
+export function PublishForm({ telephone, annonce }: { telephone: string; annonce?: { id: string; saisie: AnnonceSaisie } }) {
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [envoi, setEnvoi] = useState<Envoi | null>(null);
+
+  /**
+   * Dépôt : l'annonce est enregistrée, puis ses photos partent une par une (une requête par
+   * photo, pour rester sous la limite d'envoi de l'hébergeur).
+   */
+  async function deposer(precedent: EtatDepot, formulaire: FormData): Promise<EtatDepot> {
+    const resultat = await soumettreAnnonce(precedent, formulaire);
+    if (resultat.statut !== "enregistree" || photos.length === 0) return resultat;
+    const erreurs: string[] = [];
+    for (const [rang, photo] of photos.entries()) {
+      setEnvoi({ faites: rang, total: photos.length, erreurs: [...erreurs], fini: false });
+      const donnees = new FormData();
+      donnees.set("photo", photo.fichier);
+      try {
+        const envoye = await ajouterPhoto(resultat.id, donnees);
+        if (envoye.erreur) erreurs.push(envoye.erreur);
+      } catch {
+        erreurs.push(`« ${photo.nom} » n'a pas pu être envoyée.`);
+      }
+    }
+    setEnvoi({ faites: photos.length, total: photos.length, erreurs, fini: true });
+    return resultat;
+  }
+
+  const [etat, envoyer, enCours] = useActionState(annonce ? modifierAnnonce : deposer, initial);
   const [erreursPhotos, setErreursPhotos] = useState<string[]>([]);
   const resume = useRef<HTMLDivElement>(null);
 
+
   const erreurs = etat.statut === "erreurs" ? etat.erreurs : {};
-  const saisie = etat.statut === "erreurs" ? etat.saisie : undefined;
+  const saisie = etat.statut === "erreurs" ? etat.saisie : annonce?.saisie;
   const nombreErreurs = Object.keys(erreurs).length;
   const general = etat.statut === "erreurs" ? etat.general : undefined;
 
@@ -45,7 +80,7 @@ export function PublishForm({ telephone }: { telephone: string }) {
       } else if (photos.length + ajouts.length >= PHOTOS_MAX) {
         refus.push(`« ${fichier.name} » n'a pas été ajoutée : ${PHOTOS_MAX} photos au maximum.`);
       } else {
-        ajouts.push({ id: `${fichier.name}-${fichier.size}-${fichier.lastModified}`, nom: fichier.name, url: URL.createObjectURL(fichier) });
+        ajouts.push({ id: `${fichier.name}-${fichier.size}-${fichier.lastModified}`, nom: fichier.name, url: URL.createObjectURL(fichier), fichier });
       }
     }
     setPhotos((actuelles) => [...actuelles, ...ajouts.filter((a) => !actuelles.some((p) => p.id === a.id))]);
@@ -81,13 +116,22 @@ export function PublishForm({ telephone }: { telephone: string }) {
             <strong>Votre annonce « {etat.titre} » est enregistrée.</strong>
           </p>
           <p>
-            Elle est en attente de validation par Hoko et apparaîtra sur le site une fois validée. Vous la retrouvez dans « Mes
-            annonces ».
+            Elle est en attente de validation par Hoko et apparaîtra sur le site une fois validée. Vous la retrouvez dans
+            « Mes annonces ».
           </p>
-          {photos.length > 0 && (
-            <p className="small">Les photos ne sont pas encore envoyées : l&apos;envoi des photos arrive bientôt.</p>
-          )}
         </div>
+        {envoi && envoi.erreurs.length > 0 && (
+          <div className="avis avis-erreur" role="alert">
+            <p>
+              <strong>Certaines photos n&apos;ont pas été ajoutées.</strong> Vous pourrez les ajouter depuis « Modifier ».
+            </p>
+            {envoi.erreurs.map((message) => (
+              <p key={message} className="small">
+                {message}
+              </p>
+            ))}
+          </div>
+        )}
         <Link className="btn btn-secondary" href="/compte/annonces">
           Voir mes annonces
         </Link>
@@ -108,6 +152,12 @@ export function PublishForm({ telephone }: { telephone: string }) {
 
   return (
     <form className="formulaire" action={envoyer} noValidate>
+      {annonce && <input type="hidden" name="id" value={annonce.id} />}
+      {annonce && (
+        <div className="avis">
+          <p>Après modification, Hoko vérifie de nouveau l&apos;annonce : elle quitte le site le temps de la vérification.</p>
+        </div>
+      )}
       {(nombreErreurs > 0 || general) && (
         <div className="avis avis-erreur" ref={resume} tabIndex={-1} role="alert">
           <strong>
@@ -150,12 +200,13 @@ export function PublishForm({ telephone }: { telephone: string }) {
         {erreur("description")}
       </div>
 
+      {!annonce && (
       <div className="champ">
         <span className="champ-titre" id="titre-photos">
           Photos
         </span>
         <span className="small muted">JPEG uniquement, 4 Mo maximum par photo, {PHOTOS_MAX} photos au plus.</span>
-        {/* Sans attribut name : les photos ne sont pas envoyées tant que le stockage n'existe pas */}
+        {/* Sans attribut name : les photos partent une par une après l'enregistrement de l'annonce */}
         <label className="btn btn-secondary depot" htmlFor="photos">
           Ajouter des photos
         </label>
@@ -192,6 +243,7 @@ export function PublishForm({ telephone }: { telephone: string }) {
           </ul>
         )}
       </div>
+      )}
 
       <div className="champ-ligne">
         <div className="champ">
@@ -231,8 +283,13 @@ export function PublishForm({ telephone }: { telephone: string }) {
       </div>
 
       <button className="btn btn-primary" type="submit" disabled={enCours}>
-        {enCours ? "Enregistrement…" : "Publier l'annonce"}
+        {enCours ? "Enregistrement…" : annonce ? "Envoyer les modifications" : "Publier l'annonce"}
       </button>
+      {enCours && envoi && !envoi.fini && (
+        <p className="small" role="status">
+          Envoi des photos : {envoi.faites + 1} sur {envoi.total}… Gardez cette page ouverte.
+        </p>
+      )}
     </form>
   );
 }

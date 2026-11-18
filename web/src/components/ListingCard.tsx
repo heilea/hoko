@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCategory, type Listing } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
 import { Icon } from "./Icon";
+import { PhotoCadree } from "./PhotoCadree";
 
 /**
  * Ligne d'annonce : toute la carte est un lien vers la page de l'annonce.
@@ -13,7 +14,11 @@ export function ListingCard({ annonce, sansBoost = false }: { annonce: Listing; 
   return (
     <Link className="annonce" href={`/annonces/${annonce.id}`}>
       <div className="photo">
-        {categorie && <Icon name={categorie.icone} />}
+        {annonce.photos[0] ? (
+          <PhotoCadree src={annonce.photos[0].vignette} alt="" />
+        ) : (
+          categorie && <Icon name={categorie.icone} />
+        )}
         {annonce.boost && !sansBoost && <span className="badge badge-boost">Boost</span>}
       </div>
       <div className="corps">

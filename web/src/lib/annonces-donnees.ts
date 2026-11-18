@@ -29,7 +29,7 @@ export const TAG_VITRINES = "vitrines";
 const LIMITE_LISTE = 100;
 
 const COLONNES =
-  "id, titre, description, prix_xpf, suffixe_prix, ile, commune, vendeur_nom, created_at, boost_jusqu_au, shop_id, categories(slug), shops(slug)";
+  "id, titre, description, prix_xpf, suffixe_prix, ile, commune, vendeur_nom, created_at, boost_jusqu_au, shop_id, categories(slug), shops(slug), photos(id, chemin, ordre)";
 const COLONNES_VITRINE = "slug, nom, secteur, ile, commune, presentation, horaires, categories(slug)";
 
 function enAnnonces(lignes: LigneListing[] | null): Listing[] {

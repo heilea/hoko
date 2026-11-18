@@ -43,6 +43,7 @@ Deux projets Vercel, construits à partir du même dépôt. Chaque fusion sur `m
 - **Root Directory** : `web`. Sans ce réglage, la construction échoue.
 - **Variables d'environnement** :
   - `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` : ceux de la base correspondante ;
+  - `SUPABASE_SECRET_KEY` : la clé secrète de la base correspondante (sans préfixe `NEXT_PUBLIC_`). Le serveur s'en sert seulement pour déposer et effacer les photos ; sans elle, l'envoi de photos est indisponible ;
   - `SITE_URL` : l'adresse fixe du projet, avec `https://` et sans `/` final.
   - Ni la clé secrète de Supabase ni `HOKO_DIST_DIR`, qui ne sert qu'en local.
 - Après une modification de variable : **Redeploy**. Une variable ne compte qu'à partir du déploiement suivant.

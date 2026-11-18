@@ -4,6 +4,7 @@
  */
 import type { Listing, Pro } from "./data";
 import type { Tables } from "./database.types";
+import { versPhotos } from "./photos";
 
 /** Les annonces se datent à l'heure de Tahiti, quel que soit le fuseau du serveur. */
 const FUSEAU = "Pacific/Tahiti";
@@ -18,6 +19,7 @@ export type LigneListing = Pick<
 > & {
   categories: Pick<Tables<"categories">, "slug"> | null;
   shops: Pick<Tables<"shops">, "slug"> | null;
+  photos?: Pick<Tables<"photos">, "id" | "chemin" | "ordre">[];
 };
 
 /** Une vitrine telle que la base la renvoie, avec sa catégorie. */
@@ -63,6 +65,7 @@ export function versListing(ligne: LigneListing, maintenant: number): Listing | 
     boost: !ligne.shop_id && boostFin > maintenant,
     vendeur: ligne.vendeur_nom,
     shopId: ligne.shops?.slug,
+    photos: versPhotos(ligne.photos),
   };
 }
 

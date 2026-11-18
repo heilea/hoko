@@ -133,6 +133,8 @@ svg.ico { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-wi
 .annonce:hover { border-color: var(--marque); }
 .annonce .photo { position: relative; background: var(--sunken); display: grid; place-items: center; color: var(--marque); min-height: 104px; }
 .annonce .photo svg { width: 40px; height: 40px; stroke-width: 1.4; }
+.annonce .photo .cadre-photo { position: absolute; inset: 0; }
+.annonce .photo .badge { position: relative; z-index: 1; }
 .annonce .corps { padding: 12px 16px; display: grid; gap: 4px; align-content: center; min-width: 0; }
 .annonce h3 { overflow-wrap: anywhere; }
 .price { font: 900 18px/24px var(--font-body); font-variant-numeric: tabular-nums; }
@@ -178,6 +180,28 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   display: grid; place-items: center; align-content: center; gap: 8px; color: var(--marque);
 }
 .visuel svg { width: 72px; height: 72px; stroke-width: 1.2; }
+
+/* Photos d'une annonce : grande image, puis les vignettes pour changer de photo */
+.galerie { display: grid; gap: 8px; }
+/* Bande de photos qu'on fait glisser : une photo par écran, arrêt net sur chacune */
+.galerie-bande {
+  list-style: none; margin: 0; padding: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: none;
+  aspect-ratio: 4 / 3; border: 1px solid var(--border); border-radius: 12px;
+}
+.galerie-bande::-webkit-scrollbar { display: none; }
+.galerie-bande li { flex: 0 0 100%; scroll-snap-align: start; scroll-margin-top: 80px; }
+.galerie-bande .cadre-photo { height: 100%; }
+
+/* Photo entière dans un cadre fixe, bords remplis par la même photo floutée (PhotoCadree) */
+.cadre-photo { position: relative; display: block; overflow: hidden; background: var(--sunken); }
+.cadre-photo img { position: absolute; display: block; }
+.cadre-photo .cadre-fond { inset: -12%; width: 124%; height: 124%; object-fit: cover; filter: blur(14px) saturate(1.1) brightness(.85); }
+.cadre-photo .cadre-image { inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.galerie-choix { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.galerie-choix a { display: block; padding: 2px; border: 2px solid var(--border); border-radius: 6px; }
+.galerie-choix a:hover, .galerie-choix a:focus-visible { border-color: var(--accent); }
+.galerie-choix .cadre-photo { width: 72px; height: 54px; border-radius: 4px; }
 .fiche-titre { display: grid; gap: 8px; }
 .fiche-titre h1 { overflow-wrap: anywhere; }
 .description { max-width: 65ch; white-space: pre-line; }
@@ -296,6 +320,15 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 .vignettes { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
 .vignettes li { display: grid; gap: 4px; }
 .vignettes img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); display: block; }
+.vignettes .cadre-photo { aspect-ratio: 4 / 3; border-radius: 4px; border: 1px solid var(--border); }
+.vignettes .cadre-photo img { aspect-ratio: auto; border: 0; border-radius: 0; width: auto; }
+.vignettes .cadre-photo .cadre-image { width: 100%; }
+.vignettes .cadre-photo .cadre-fond { width: 124%; }
+.vignettes a { display: block; }
+.vignettes-gestion { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.vignettes button:disabled { opacity: .5; cursor: default; }
+.vignette-premiere { color: var(--muted); padding: 4px 0; }
+.desactive { opacity: .5; pointer-events: none; }
 .vignettes button { border: 0; background: none; padding: 4px 0; font: 500 14px/20px var(--font-body); color: var(--accent); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; }
 .apercu { pointer-events: none; }
 .apercu .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -374,12 +407,18 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 .suivi-chiffres { margin: 0; grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 32px; border-top: 1px solid var(--border); padding-top: 12px; }
 .suivi-chiffres dt { color: var(--muted); }
 .suivi-chiffres dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
-.suivi-lien { grid-column: 2; grid-row: 1; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.suivi-lien svg { width: 16px; height: 16px; }
+/* Boutons de chaque annonce : lien public à gauche, gestes à droite */
+.suivi-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.suivi-actions > .link { display: inline-flex; align-items: center; gap: 6px; }
+.suivi-actions > .link svg { width: 16px; height: 16px; }
+.suivi-actions .boutons { margin-left: auto; }
+.btn-petit { padding: 0 14px; }
 .badge-statut { border: 1px solid currentColor; background: var(--bg); }
 .statut-active { color: var(--succes); }
 .statut-en_attente_validation { color: var(--attente); }
 .statut-refusee { color: var(--erreur); }
+.statut-vendue { color: var(--marque); }
+.statut-expiree { color: var(--muted); }
 .badge-attente { background: #fbefd0; color: var(--attente); }
 
 /* Pages à venir et page introuvable */
@@ -392,7 +431,6 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .compte-nav a, .compte-nav button { width: auto; }
   .compte-nav form { border-top: 0; margin-top: 0; padding-top: 0; }
   .suivi { grid-template-columns: minmax(0, 1fr); }
-  .suivi-lien { grid-column: 1; grid-row: auto; }
   .porte, .achat { position: static; }
 }
 @media (max-width: 640px) {

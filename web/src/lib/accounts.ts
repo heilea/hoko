@@ -23,7 +23,13 @@ export type Account = {
   admin: boolean;
 };
 
-export type StatutAnnonce = "active" | "en_attente_validation" | "refusee" | "retiree";
+/**
+ * États d'une annonce vus par son propriétaire (SPEC.md, 4 quinquies). « expiree » n'existe pas
+ * dans la base : c'est une annonce « active » dont la date de fin est passée.
+ */
+export type StatutAnnonce = "active" | "en_attente_validation" | "refusee" | "retiree" | "vendue" | "expiree";
+/** Ce que l'annonceur peut faire d'une annonce, selon son état. */
+export type Geste = "vendue" | "retirer" | "republier" | "modifier";
 export type StatutBoost = "aucun" | "actif" | "en_attente_paiement";
 export type StatutVitrine = "en_attente_paiement" | "actif" | "suspendu";
 
@@ -42,6 +48,10 @@ export type AccountListing = {
   lien?: string;
   /** Raison donnée par l'administrateur, pour une annonce refusée. */
   motif?: string;
+  /** Date de fin d'une annonce en ligne (« 17 décembre »), à l'heure de Tahiti. */
+  finLe?: string;
+  /** Boutons proposés, dans l'ordre d'affichage. */
+  gestes: Geste[];
 };
 
 /** La vitrine d'un pro, telle qu'il la voit dans son espace. */
@@ -61,11 +71,11 @@ export type Vitrine = {
 };
 
 /** Une ligne de la table `listings` (types générés), avec le slug de sa catégorie. */
-export type LigneAnnonce = Pick<Tables<"listings">, "id" | "titre" | "prix_xpf" | "statut" | "boost_jusqu_au" | "motif_refus"> & {
+export type LigneAnnonce = Pick<Tables<"listings">, "id" | "titre" | "prix_xpf" | "statut" | "boost_jusqu_au" | "motif_refus" | "expire_le"> & {
   categories: Pick<Tables<"categories">, "slug"> | null;
 };
 
-const STATUTS_ANNONCE: readonly StatutAnnonce[] = ["active", "en_attente_validation", "refusee", "retiree"];
+const STATUTS_ANNONCE: readonly StatutAnnonce[] = ["active", "en_attente_validation", "refusee", "retiree", "vendue"];
 const STATUTS_VITRINE: readonly StatutVitrine[] = ["en_attente_paiement", "actif", "suspendu"];
 
 /**
@@ -81,10 +91,47 @@ export function lireStatutVitrine(valeur: string): StatutVitrine {
   return STATUTS_VITRINE.find((s) => s === valeur) ?? "en_attente_paiement";
 }
 
+/** Durée en ligne d'une annonce de particulier, à partir de la validation (SPEC.md, 4 quinquies). */
+export const DUREE_ANNONCE_JOURS = 30;
+
+/**
+ * Annonces en attente de validation en même temps, au plus (SPEC.md, 4 ter). Vérifié par la
+ * base, qui signale un refus par l'indice (hint) « en_attente ».
+ */
+export const MAX_EN_ATTENTE_PARTICULIER = 5;
+export const MESSAGE_EN_ATTENTE = `Vous avez déjà ${MAX_EN_ATTENTE_PARTICULIER} annonces en attente de validation. Attendez qu'elles soient vérifiées avant d'en déposer ou d'en modifier une autre.`;
+
+/** Boutons proposés pour chaque état : un ou deux gestes simples, le plus utile en premier. */
+const GESTES: Record<StatutAnnonce, Geste[]> = {
+  active: ["vendue", "modifier", "retirer"],
+  en_attente_validation: ["modifier", "retirer"],
+  refusee: ["modifier"],
+  vendue: ["republier", "modifier"],
+  retiree: ["republier", "modifier"],
+  expiree: ["republier", "modifier"],
+};
+
+export function gestesPossibles(statut: StatutAnnonce): Geste[] {
+  return GESTES[statut];
+}
+
+/** Lit un geste envoyé par un formulaire. Renvoie null pour une valeur inconnue. */
+export function lireGeste(valeur: unknown): Exclude<Geste, "modifier"> | null {
+  return valeur === "vendue" || valeur === "retirer" || valeur === "republier" ? valeur : null;
+}
+
+/** « 17 décembre », à l'heure de Tahiti. */
+export function dateCourte(instant: string): string {
+  return new Date(instant).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "Pacific/Tahiti" });
+}
+
 /** Met une annonce de la base au format de l'espace annonceur. */
 export function versSuivi(ligne: LigneAnnonce, maintenant: number): AccountListing {
   const id = String(ligne.id);
-  const statut = lireStatutAnnonce(ligne.statut);
+  const fin = ligne.expire_le ? Date.parse(ligne.expire_le) : NaN;
+  const lu = lireStatutAnnonce(ligne.statut);
+  // Une annonce active dont la date de fin est passée a quitté le site : elle est expirée
+  const statut: StatutAnnonce = lu === "active" && fin <= maintenant ? "expiree" : lu;
   const boostFin = ligne.boost_jusqu_au ? Date.parse(ligne.boost_jusqu_au) : NaN;
   return {
     id,
@@ -97,6 +144,8 @@ export function versSuivi(ligne: LigneAnnonce, maintenant: number): AccountListi
     contacts: 0,
     lien: statut === "active" ? `/annonces/${id}` : undefined,
     motif: statut === "refusee" ? (ligne.motif_refus ?? undefined) : undefined,
+    finLe: (statut === "active" || statut === "expiree") && ligne.expire_le ? dateCourte(ligne.expire_le) : undefined,
+    gestes: gestesPossibles(statut),
   };
 }
 
@@ -122,10 +171,29 @@ export function resumer(annonces: AccountListing[]): ResumeCompte {
 }
 
 export const LIBELLE_STATUT: Record<StatutAnnonce, string> = {
-  active: "Active",
+  active: "En ligne",
   en_attente_validation: "En attente de validation",
   refusee: "Refusée",
   retiree: "Retirée",
+  vendue: "Vendue",
+  expiree: "Expirée",
+};
+
+/** Texte des boutons de « Mes annonces ». */
+export const LIBELLE_GESTE: Record<Geste, string> = {
+  vendue: "Marquer vendue",
+  retirer: "Retirer",
+  republier: "Republier 30 jours",
+  modifier: "Modifier",
+};
+
+/** Message affiché après un geste réussi (`?fait=` dans l'adresse). */
+export const CONFIRMATION_GESTE: Record<string, string> = {
+  vendue: "Annonce marquée vendue : elle a quitté le site. Félicitations !",
+  retiree: "Annonce retirée : elle a quitté le site.",
+  active: `Annonce republiée : elle est en ligne pour ${DUREE_ANNONCE_JOURS} jours.`,
+  en_attente_validation: "Annonce renvoyée à la validation : elle sera en ligne une fois vérifiée.",
+  modifiee: "Annonce modifiée : elle sera de nouveau en ligne une fois vérifiée par Hoko.",
 };
 
 export const LIBELLE_BOOST: Record<Exclude<StatutBoost, "aucun">, string> = {

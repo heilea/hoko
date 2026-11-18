@@ -20,7 +20,7 @@ export async function getAnnoncesEnAttente(): Promise<{ annonces: LigneAModerer[
   if (!supabase) return { annonces: [], total: 0, maintenant: 0 };
   const { data, count, error } = await supabase
     .from("listings")
-    .select("id, titre, description, prix_xpf, suffixe_prix, ile, commune, vendeur_nom, created_at, categories(slug, nom)", {
+    .select("id, titre, description, prix_xpf, suffixe_prix, ile, commune, vendeur_nom, created_at, categories(slug, nom), photos(id, chemin, ordre)", {
       count: "exact",
     })
     .eq("statut", "en_attente_validation")

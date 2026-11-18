@@ -6,6 +6,8 @@
  */
 import { lireStatutVitrine, versSuivi, type Account, type AccountListing, type Vitrine } from "./accounts";
 import { MAX_ANNONCES_PRO } from "./data";
+import { versPhotos, type Photo } from "./photos";
+import type { AnnonceSaisie } from "./validation";
 import { creerClientServeur } from "./supabase-serveur";
 
 /** Les annonces du compte, les plus récentes d'abord. */
@@ -14,13 +16,48 @@ export async function getAccountListings(compte: Account): Promise<AccountListin
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("listings")
-    .select("id, titre, prix_xpf, statut, boost_jusqu_au, motif_refus, categories(slug)")
+    .select("id, titre, prix_xpf, statut, boost_jusqu_au, motif_refus, expire_le, categories(slug)")
     .eq("user_id", compte.id)
     .order("created_at", { ascending: false });
   if (error || !data) return [];
   // L'heure courante dit si un boost est encore actif (la requête est déjà attendue, voir creerClientServeur)
   const maintenant = Date.now();
   return data.map((ligne) => versSuivi(ligne, maintenant));
+}
+
+/**
+ * Une annonce du compte, avec son contenu, pour le formulaire « Modifier ».
+ * Les règles d'accès de la base ne renvoient que les annonces du compte connecté.
+ */
+export async function getAnnoncePourModifier(
+  compte: Account,
+  id: string,
+): Promise<{ id: string; saisie: AnnonceSaisie; photos: Photo[] } | null> {
+  if (!/^[1-9]\d{0,17}$/.test(id)) return null;
+  const supabase = await creerClientServeur();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("listings")
+    .select("id, titre, description, prix_xpf, ile, commune, categories(slug), photos(id, chemin, ordre)")
+    .eq("id", Number(id))
+    .eq("user_id", compte.id)
+    .is("shop_id", null)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    id: String(data.id),
+    saisie: {
+      titre: data.titre,
+      categorie: data.categories?.slug ?? "",
+      prix: String(data.prix_xpf),
+      description: data.description,
+      ile: data.ile,
+      commune: data.commune,
+      // Le vendeur confirme de nouveau l'affichage de son numéro à chaque envoi
+      accord: false,
+    },
+    photos: versPhotos(data.photos),
+  };
 }
 
 /** La vitrine du pro, ou null pour un particulier. */

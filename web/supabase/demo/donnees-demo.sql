@@ -4,6 +4,8 @@
 -- Généré depuis les anciennes données d'exemple du site (8 annonces de particuliers,
 -- 6 vitrines, 15 annonces pro). Les numéros de téléphone sont fictifs.
 -- Catégories attendues : vehicules, immobilier, emploi, services, maison, multimedia, mode, sports, nautisme, animaux.
+-- Les annonces d'exemple n'ont pas de date de fin (expire_le vide) : la démo ne se vide pas
+-- au bout de 30 jours. Les vraies annonces de particuliers en ont une (SPEC.md, 4 quinquies).
 
 -- Comptes des vendeurs d'exemple : sans mot de passe, ils ne peuvent pas se connecter.
 -- Le déclencheur handle_new_user crée leur profil, et la vitrine des pros.

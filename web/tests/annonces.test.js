@@ -110,6 +110,7 @@ describe("annonce lue dans la base", () => {
       boost: false,
       vendeur: "Hinano",
       shopId: undefined,
+      photos: [],
     });
   });
 

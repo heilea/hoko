@@ -27,7 +27,7 @@ export default async function DashboardPage() {
 
       <dl className="chiffres">
         <div>
-          <dt>Annonces actives</dt>
+          <dt>Annonces en ligne</dt>
           <dd>
             {resume.actives}
             <span className="suffixe"> sur {maximumAnnonces(compte)}</span>
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
         {annonces.length > 0 ? (
           <ul className="suivis">
             {annonces.slice(0, 3).map((annonce) => (
-              <AccountListingRow key={annonce.id} annonce={annonce} />
+              <AccountListingRow key={annonce.id} annonce={annonce} gestes={compte.type === "particulier"} />
             ))}
           </ul>
         ) : (
@@ -103,8 +103,8 @@ export default async function DashboardPage() {
         ) : (
           <div className="avis">
             <p>
-              Vous avez atteint le maximum de {maximumAnnonces(compte)} annonces actives. Retirez-en une pour en publier
-              une nouvelle.
+              Vous avez atteint le maximum de {maximumAnnonces(compte)} annonces en ligne. Marquez-en une vendue ou
+              retirez-la pour en publier une nouvelle.
             </p>
           </div>
         ))}

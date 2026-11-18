@@ -23,7 +23,7 @@
 
 ### 1.2 Hors périmètre en V1
 
-- **[Acquis]** Messagerie interne, paiement en ligne automatisé (en V1, l'administrateur active à la main après réception des fonds), application mobile native, avis et notes, statistiques avancées.
+- **[Acquis]** Messagerie interne, paiement en ligne automatisé (en V1, l'administrateur active à la main après réception des fonds), application mobile native, avis et notes, statistiques avancées, packs d'annonces pour les particuliers (V2, voir 5.1).
 - **[Proposé]** Paiement entre acheteur et vendeur, livraison, version anglaise ou tahitienne de l'interface.
 
 ### 1.3 Principes qui guident les choix
@@ -41,7 +41,7 @@
 |---|---|---|
 | **Visiteur** | Toute personne, sans compte | Parcourt, cherche, consulte une annonce ou une vitrine, révèle un numéro |
 | **Particulier** | Vendeur occasionnel, avec compte | Dépose et gère ses annonces (5 actives au plus), achète un boost |
-| **Pro** | Entreprise vérifiée (numéro TAHITI) | Ouvre une vitrine, publie jusqu'à 20 annonces, ne peut pas booster |
+| **Pro** | Entreprise vérifiée (numéro TAHITI et documents de la DICP prouvant que l'entreprise existe). **[Acquis]** Réservé aux vraies entreprises : un particulier sans entreprise reste à 5 annonces | Ouvre une vitrine, publie jusqu'à 20 annonces, ne peut pas booster |
 | **Administrateur** | Équipe Hoko | Valide les annonces, vérifie les pros, modère, gère la publicité |
 
 ---
@@ -77,11 +77,12 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 | Fonction | État | Règle |
 |---|---|---|
-| Dépôt d'annonce | 🟡 | Réservé aux particuliers connectés. L'annonce est enregistrée « en attente de validation », avec le téléphone du compte. Photos pas encore envoyées |
+| Dépôt d'annonce | ✅ | Réservé aux particuliers connectés. L'annonce est enregistrée « en attente de validation », avec le téléphone du compte, puis ses photos (6 au plus) partent une par une |
+| Photos | ✅ | Stockage Supabase. Ajout, suppression et choix de la vignette depuis « Modifier » ; une photo ajoutée renvoie l'annonce à la validation. L'administrateur voit les photos avant de valider |
 | Inscription | ✅ | Particulier ou pro (5.8), avec Supabase Auth et confirmation de l'adresse par e-mail. La vitrine d'un pro est créée « en attente de paiement » |
 | Connexion par e-mail + mot de passe | ✅ | Supabase Auth, qui limite les essais. Plus de comptes de démonstration |
 | Tableau de bord, mes annonces, mon profil | 🟡 | Statuts et chiffres d'exemple |
-| Modifier / supprimer / marquer « vendu » | ⬜ | [Proposé] V1 |
+| Modifier / retirer / marquer « vendue » / republier | ⬜ | [Acquis] V1, règles en 5.1 |
 | Achat d'un boost | ⬜ | Statut « en attente de paiement » déjà modélisé |
 | Statistiques réelles (vues, contacts) | ⬜ | « Contacts » = numéros révélés |
 | Réinitialisation du mot de passe | ✅ | Lien envoyé par e-mail |
@@ -124,10 +125,30 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 | Accord | Case obligatoire : le vendeur accepte l'affichage de son numéro |
 | Photos | JPEG uniquement, 4 Mo maximum chacune ; **6 photos maximum [À confirmer]** |
 
-**Limite par particulier [Acquis]** : **5 annonces actives au plus**. Elle évite les annonces sans intérêt et empêche un professionnel de se faire passer pour un particulier. Au-delà, le particulier retire une annonce ou ouvre une vitrine pro. **[À décider]** : les annonces en attente de validation comptent-elles dans les 5 ?
+**Limite par particulier [Acquis]** : **5 annonces actives au plus**. Elle évite les annonces sans intérêt et empêche un professionnel de se faire passer pour un particulier. Au-delà, le particulier retire une annonce ou ouvre une vitrine pro. Les annonces en attente de validation ne comptent pas dans les 5, mais elles ont leur propre limite **[Acquis]** : **5 en attente au plus** en même temps (20 pour une vitrine pro), pour qu'un compte ne puisse pas remplir la file de validation.
+
+**Packs d'annonces : reportés en V2 [Acquis]**. Idée pour les particuliers qui vendent beaucoup sans avoir d'entreprise ; pas la cible principale, et trop de gestion pour la V1. En V1, au-delà de 5 annonces, le particulier ouvre une vitrine pro. Règles proposées pour la V2 : achats uniques, sans abonnement, réservés aux particuliers, valables **30 jours** chacun.
+- **Pack 1** : 8 000 XPF pour **10 annonces supplémentaires**.
+- **Pack 2** : 5 000 XPF pour **5 annonces supplémentaires**, proposé **uniquement après l'achat du pack 1**.
+- Plafond : **20 annonces actives** au total pour un particulier, packs compris. Au-delà, il doit ouvrir une vitrine pro.
+- **[Acquis]** Les packs n'incluent aucun avantage pro (ni vitrine, ni annuaire, ni badge « Pro vérifié », ni présence sur l'accueil) et aucun boost.
+- Prix : les deux packs (13 000 XPF pour 20 annonces) restent supérieurs à la vitrine pro (10 000 XPF pour 20 annonces, avec ses avantages de visibilité), pour que la vitrine reste l'offre la plus avantageuse pour un pro.
 
 **Cycle de vie** : `en attente de validation` → `active` ou `refusée`. Un administrateur valide chaque annonce avant publication [Acquis]. Un refus s'accompagne d'un motif lisible par l'annonceur, de 5 à 500 caractères [Acquis].
-**À ajouter [Proposé]** : durée de vie d'une annonce (par exemple 60 jours, avec rappel avant expiration), statut `vendue`, statut `expirée`.
+
+**Durée et gestion par l'annonceur [Acquis]** : la gestion doit rester simple, chaque annonce de « Mes annonces » montre son état, sa date de fin et un ou deux boutons clairs.
+
+| Action ou événement | Effet |
+|---|---|
+| Validation | L'annonce est en ligne pour **30 jours**, comptés à partir de la validation |
+| Marquer « vendue » | Elle quitte le site tout de suite et libère une des 5 places ; pas de badge « Vendu » public |
+| Retirer | Même effet, sans être vendue |
+| Fin des 30 jours | Statut `expirée` : elle quitte le site et libère sa place |
+| Republier (expirée, retirée ou vendue) | 30 nouveaux jours, sans nouvelle validation si le contenu n'a pas changé ; dans la limite de 5 annonces en ligne |
+| Modifier le contenu ou les photos | Retour **en attente de validation** ; à la validation, 30 jours repartent |
+| Boost qui dépasse la fin | La fin de l'annonce est repoussée jusqu'à la fin du boost |
+
+Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À confirmer]**. Rappel par e-mail avant expiration : avec Resend. **[À décider]** : durée des annonces pro, qui suivent aujourd'hui leur vitrine.
 
 ### 5.2 Boost [Acquis]
 
@@ -135,7 +156,10 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 - Statuts : `aucun`, `en attente de paiement`, `actif`.
 - Réservé aux particuliers : **un pro ne peut pas booster**.
 - Il reste « en attente de paiement » jusqu'à réception des fonds (5.7).
-- **[À décider]** : nombre de boosts simultanés par catégorie, remboursement.
+- **Places par catégorie [Proposé]** : **3 places** en tête de chaque catégorie. Si plus de 3 annonces sont boostées, elles tournent à tour de rôle dans ces places. Le badge « Boost » reste affiché.
+- **Limite par particulier [Proposé]** : **2 boosts actifs au maximum** à la fois. Au-delà, le particulier attend la fin d'un boost.
+- Prix à revoir après quelques mois de données réelles (taux de remplissage des places, nombre de boosts par particulier, abonnements pro).
+- **[À décider]** : remboursement d'un boost.
 
 ### 5.3 Vitrine pro [Acquis]
 
@@ -224,7 +248,7 @@ Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirme
 - **Mots de passe** : gérés par Supabase Auth, qui les hache. Jamais en clair. Les comptes de démonstration ont été retirés.
 - **Session** : cookie `httpOnly`, `sameSite=lax`, `secure` en production, signé avec `SESSION_SECRET`. **Sans cette variable, la connexion est désactivée en production** [Acquis].
 - **Connexion** : même message d'erreur pour e-mail inconnu et mot de passe faux [Acquis] ; **limite d'essais à ajouter**.
-- **Envoi de photos** : vérifier le type réel du fichier (pas seulement l'extension), retirer les métadonnées (position GPS), stocker hors du serveur applicatif.
+- **Envoi de photos** ✅ : le serveur vérifie le type réel du fichier (pas seulement l'extension), retire toutes les métadonnées (position GPS, modèle du téléphone) et réduit l'image (1 600 px, vignette 480 px) avec la bibliothèque sharp, puis la stocke dans Supabase Storage. Seul le serveur dépose et efface dans le stockage (clé secrète, jamais envoyée au navigateur) : un compte ne peut pas y déposer de fichier lui-même. Une photo par requête, pour rester sous la limite d'envoi de Vercel (4,5 Mo). Les adresses des fichiers sont publiques mais impossibles à deviner ; elles ne sont données que par les pages qui montrent l'annonce. **[À faire]** : effacer les photos 30 jours après la fin d'une annonce.
 - **Validation** : toujours côté serveur ; échapper tout texte saisi par les utilisateurs.
 - **Anti-abus** : limite de dépôts par compte et par jour, limite de révélations de numéro, protection anti-robots sur l'inscription et le dépôt.
 - **Secrets** : uniquement dans les variables d'environnement, jamais dans le dépôt.
@@ -308,11 +332,10 @@ Classés par urgence : les premiers bloquent la phase 1. Les choix techniques so
 |---|---|---|
 | 2 | Îles et catégories couvertes en V1 | Structure des filtres et du SEO |
 | 3 | Nombre de photos par annonce (6 proposé) | Stockage et formulaire |
-| 4 | Durée de vie d'une annonce et règles d'expiration | Modèle de données |
 | 5 | Qui valide les annonces, et sous quel délai ? | Charge d'exploitation |
 | 6 | Passerelle carte (OSB/PayZen ou NiuPay), lieu de remise des espèces, critères des comptes habituels, tarif de la publicité exclusive | Phase 3 |
 | 6 bis | TVA et mentions obligatoires d'une facture, à confirmer avec un expert-comptable | Phase 3 |
-| 7 | Procédure de vérification d'un pro (justificatifs TAHITI) | Phase 3 |
+| 7 | Procédure de vérification d'un pro : liste exacte des documents de la DICP demandés, et comment ils sont envoyés | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |
 | 9 | Niveau de disponibilité visé. Région décidée : us-west-1, Californie (125 ms depuis Tahiti, contre 236 ms pour Séoul et 261 ms pour Sydney) | Coût |
 | 10 | Nom de domaine et exploitant légal du site | Mentions légales, et **bloque l'envoi d'e-mails** (SPF, DKIM de Resend) |
