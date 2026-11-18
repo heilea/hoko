@@ -94,6 +94,13 @@ export function lireStatutVitrine(valeur: string): StatutVitrine {
 /** Durée en ligne d'une annonce de particulier, à partir de la validation (SPEC.md, 4 quinquies). */
 export const DUREE_ANNONCE_JOURS = 30;
 
+/**
+ * Annonces en attente de validation en même temps, au plus (SPEC.md, 4 ter). Vérifié par la
+ * base, qui signale un refus par l'indice (hint) « en_attente ».
+ */
+export const MAX_EN_ATTENTE_PARTICULIER = 5;
+export const MESSAGE_EN_ATTENTE = `Vous avez déjà ${MAX_EN_ATTENTE_PARTICULIER} annonces en attente de validation. Attendez qu'elles soient vérifiées avant d'en déposer ou d'en modifier une autre.`;
+
 /** Boutons proposés pour chaque état : un ou deux gestes simples, le plus utile en premier. */
 const GESTES: Record<StatutAnnonce, Geste[]> = {
   active: ["vendue", "modifier", "retirer"],

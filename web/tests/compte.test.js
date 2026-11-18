@@ -17,7 +17,9 @@ import {
   lireGeste,
   lireStatutAnnonce,
   lireStatutVitrine,
+  MAX_EN_ATTENTE_PARTICULIER,
   maximumAnnonces,
+  MESSAGE_EN_ATTENTE,
   peutPublier,
   resumer,
   versSuivi,
@@ -180,6 +182,14 @@ describe("vie d'une annonce : 30 jours, vendue, retirée, republiée (SPEC.md, 4
     const sql = fonctionSql("modifier_annonce");
     expect(sql).toContain("statut = 'en_attente_validation'");
     expect(sql).toContain("expire_le = null");
+  });
+
+  test("5 annonces en attente de validation au plus, refus repérable par son indice", () => {
+    const sql = fonctionSql("verifier_limite_annonces");
+    expect(sql).toContain("statut = 'en_attente_validation'");
+    expect(sql).toContain("hint = 'en_attente'");
+    expect(MAX_EN_ATTENTE_PARTICULIER).toBe(5);
+    expect(MESSAGE_EN_ATTENTE).toContain("5 annonces en attente");
   });
 
   test("l'annonceur ne peut plus écrire directement dans ses annonces", () => {

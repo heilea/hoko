@@ -125,7 +125,7 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 | Accord | Case obligatoire : le vendeur accepte l'affichage de son numéro |
 | Photos | JPEG uniquement, 4 Mo maximum chacune ; **6 photos maximum [À confirmer]** |
 
-**Limite par particulier [Acquis]** : **5 annonces actives au plus**. Elle évite les annonces sans intérêt et empêche un professionnel de se faire passer pour un particulier. Au-delà, le particulier retire une annonce ou ouvre une vitrine pro. **[À décider]** : les annonces en attente de validation comptent-elles dans les 5 ?
+**Limite par particulier [Acquis]** : **5 annonces actives au plus**. Elle évite les annonces sans intérêt et empêche un professionnel de se faire passer pour un particulier. Au-delà, le particulier retire une annonce ou ouvre une vitrine pro. Les annonces en attente de validation ne comptent pas dans les 5, mais elles ont leur propre limite **[Acquis]** : **5 en attente au plus** en même temps (20 pour une vitrine pro), pour qu'un compte ne puisse pas remplir la file de validation.
 
 **Cycle de vie** : `en attente de validation` → `active` ou `refusée`. Un administrateur valide chaque annonce avant publication [Acquis]. Un refus s'accompagne d'un motif lisible par l'annonceur, de 5 à 500 caractères [Acquis].
 
@@ -238,7 +238,7 @@ Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirme
 - **Mots de passe** : gérés par Supabase Auth, qui les hache. Jamais en clair. Les comptes de démonstration ont été retirés.
 - **Session** : cookie `httpOnly`, `sameSite=lax`, `secure` en production, signé avec `SESSION_SECRET`. **Sans cette variable, la connexion est désactivée en production** [Acquis].
 - **Connexion** : même message d'erreur pour e-mail inconnu et mot de passe faux [Acquis] ; **limite d'essais à ajouter**.
-- **Envoi de photos** ✅ : le serveur vérifie le type réel du fichier (pas seulement l'extension), retire toutes les métadonnées (position GPS, modèle du téléphone) et réduit l'image (1 600 px, vignette 480 px) avec la bibliothèque sharp, puis la stocke dans Supabase Storage. Une photo par requête, pour rester sous la limite d'envoi de Vercel (4,5 Mo). Les adresses des fichiers sont publiques mais impossibles à deviner ; elles ne sont données que par les pages qui montrent l'annonce. **[À faire]** : effacer les photos 30 jours après la fin d'une annonce.
+- **Envoi de photos** ✅ : le serveur vérifie le type réel du fichier (pas seulement l'extension), retire toutes les métadonnées (position GPS, modèle du téléphone) et réduit l'image (1 600 px, vignette 480 px) avec la bibliothèque sharp, puis la stocke dans Supabase Storage. Seul le serveur dépose et efface dans le stockage (clé secrète, jamais envoyée au navigateur) : un compte ne peut pas y déposer de fichier lui-même. Une photo par requête, pour rester sous la limite d'envoi de Vercel (4,5 Mo). Les adresses des fichiers sont publiques mais impossibles à deviner ; elles ne sont données que par les pages qui montrent l'annonce. **[À faire]** : effacer les photos 30 jours après la fin d'une annonce.
 - **Validation** : toujours côté serveur ; échapper tout texte saisi par les utilisateurs.
 - **Anti-abus** : limite de dépôts par compte et par jour, limite de révélations de numéro, protection anti-robots sur l'inscription et le dépôt.
 - **Secrets** : uniquement dans les variables d'environnement, jamais dans le dépôt.

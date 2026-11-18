@@ -2,7 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { lireGeste, peutPublier } from "@/lib/accounts";
+import { lireGeste, MESSAGE_EN_ATTENTE, peutPublier } from "@/lib/accounts";
 import { getAccountListings } from "@/lib/compte-donnees";
 import { getListingPhone, getProPhone, TAG_ANNONCES } from "@/lib/annonces-donnees";
 import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
@@ -236,7 +236,8 @@ export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormDa
   }).select("id").single();
   if (error || !creee) {
     console.error("Annonce refusée par la base :", error?.code);
-    return { statut: "erreurs", erreurs: {}, saisie, general: "L'annonce n'a pas pu être enregistrée. Réessayez dans quelques minutes." };
+    const general = error?.hint === "en_attente" ? MESSAGE_EN_ATTENTE : "L'annonce n'a pas pu être enregistrée. Réessayez dans quelques minutes.";
+    return { statut: "erreurs", erreurs: {}, saisie, general };
   }
   return { statut: "enregistree", titre: annonce.titre, id: String(creee.id) };
 }
@@ -289,7 +290,12 @@ export async function modifierAnnonce(_precedent: EtatDepot, formulaire: FormDat
   });
   if (error) {
     console.error("Modification refusée par la base :", error.code);
-    const general = error.code === "P0002" ? "Cette annonce est introuvable." : "L'annonce n'a pas pu être modifiée. Réessayez dans quelques minutes.";
+    const general =
+      error.code === "P0002"
+        ? "Cette annonce est introuvable."
+        : error.hint === "en_attente"
+          ? MESSAGE_EN_ATTENTE
+          : "L'annonce n'a pas pu être modifiée. Réessayez dans quelques minutes.";
     return { statut: "erreurs", erreurs: {}, saisie, general };
   }
   // L'annonce quitte le site le temps de la vérification
@@ -314,7 +320,8 @@ export async function gererAnnonce(formulaire: FormData): Promise<void> {
   const { data, error } = await supabase.rpc("gerer_annonce", { annonce_id: id, geste });
   if (error) {
     console.error("Geste refusé par la base :", error.code);
-    redirect(`/compte/annonces?erreur=${error.code === "23514" ? "limite" : "geste"}`);
+    const motif = error.code !== "23514" ? "geste" : error.hint === "en_attente" ? "en_attente" : "limite";
+    redirect(`/compte/annonces?erreur=${motif}`);
   }
   // Les pages publiques relisent aussitôt les annonces
   updateTag(TAG_ANNONCES);

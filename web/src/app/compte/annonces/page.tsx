@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AccountListingRow } from "@/components/AccountListingRow";
-import { CONFIRMATION_GESTE, DUREE_ANNONCE_JOURS, maximumAnnonces, resumer } from "@/lib/accounts";
+import { CONFIRMATION_GESTE, DUREE_ANNONCE_JOURS, MESSAGE_EN_ATTENTE, maximumAnnonces, resumer } from "@/lib/accounts";
 import { getAccountListings } from "@/lib/compte-donnees";
 import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
@@ -16,6 +16,7 @@ export const instant = false;
 
 const ERREURS: Record<string, string> = {
   limite: `Vous avez déjà ${MAX_ANNONCES_PARTICULIER} annonces en ligne. Marquez-en une vendue ou retirez-la avant d'en republier une autre.`,
+  en_attente: MESSAGE_EN_ATTENTE,
   geste: "Cette action n'est pas possible pour cette annonce. Rechargez la page et réessayez.",
   indisponible: "Ce service est indisponible pour le moment. Réessayez plus tard.",
 };

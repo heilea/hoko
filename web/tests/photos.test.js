@@ -128,8 +128,20 @@ describe("règles de la base pour les photos", () => {
     expect(migrations).toContain("revoke insert, update, delete on public.photos from authenticated, anon;");
   });
 
-  test("le stockage n'accepte que des JPEG, et chacun ne dépose que dans son dossier", () => {
+  test("le stockage n'accepte que des JPEG", () => {
     expect(migrations).toContain("array['image/jpeg']");
-    expect(migrations).toContain("(storage.foldername(name))[1] = (select auth.uid())::text");
+  });
+
+  test("un compte ne dépose ni n'efface lui-même dans le stockage : seul le serveur le fait", () => {
+    for (const regle of ["lecture", "dépôt", "suppression"]) {
+      const nom = `"photos stockage : ${regle} par l'annonceur"`;
+      expect(migrations.lastIndexOf(`drop policy ${nom}`), regle).toBeGreaterThan(migrations.lastIndexOf(`create policy ${nom}`));
+    }
+  });
+
+  test("la clé secrète ne sert que côté serveur, sans préfixe public", () => {
+    const code = readFileSync(join(import.meta.dirname, "..", "src", "lib", "supabase-stockage.ts"), "utf8");
+    expect(code).toContain("process.env.SUPABASE_SECRET_KEY");
+    expect(code).not.toContain("NEXT_PUBLIC_SUPABASE_SECRET");
   });
 });
