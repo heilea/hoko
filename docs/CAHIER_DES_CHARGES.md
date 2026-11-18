@@ -23,7 +23,7 @@
 
 ### 1.2 Hors périmètre en V1
 
-- **[Acquis]** Messagerie interne, paiement en ligne automatisé (en V1, l'administrateur active à la main après réception des fonds), application mobile native, avis et notes, statistiques avancées.
+- **[Acquis]** Messagerie interne, paiement en ligne automatisé (en V1, l'administrateur active à la main après réception des fonds), application mobile native, avis et notes, statistiques avancées, packs d'annonces pour les particuliers (V2, voir 5.1).
 - **[Proposé]** Paiement entre acheteur et vendeur, livraison, version anglaise ou tahitienne de l'interface.
 
 ### 1.3 Principes qui guident les choix
@@ -41,7 +41,7 @@
 |---|---|---|
 | **Visiteur** | Toute personne, sans compte | Parcourt, cherche, consulte une annonce ou une vitrine, révèle un numéro |
 | **Particulier** | Vendeur occasionnel, avec compte | Dépose et gère ses annonces (5 actives au plus), achète un boost |
-| **Pro** | Entreprise vérifiée (numéro TAHITI) | Ouvre une vitrine, publie jusqu'à 20 annonces, ne peut pas booster |
+| **Pro** | Entreprise vérifiée (numéro TAHITI et documents de la DICP prouvant que l'entreprise existe). **[Acquis]** Réservé aux vraies entreprises : un particulier sans entreprise reste à 5 annonces | Ouvre une vitrine, publie jusqu'à 20 annonces, ne peut pas booster |
 | **Administrateur** | Équipe Hoko | Valide les annonces, vérifie les pros, modère, gère la publicité |
 
 ---
@@ -127,6 +127,13 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 
 **Limite par particulier [Acquis]** : **5 annonces actives au plus**. Elle évite les annonces sans intérêt et empêche un professionnel de se faire passer pour un particulier. Au-delà, le particulier retire une annonce ou ouvre une vitrine pro. Les annonces en attente de validation ne comptent pas dans les 5, mais elles ont leur propre limite **[Acquis]** : **5 en attente au plus** en même temps (20 pour une vitrine pro), pour qu'un compte ne puisse pas remplir la file de validation.
 
+**Packs d'annonces : reportés en V2 [Acquis]**. Idée pour les particuliers qui vendent beaucoup sans avoir d'entreprise ; pas la cible principale, et trop de gestion pour la V1. En V1, au-delà de 5 annonces, le particulier ouvre une vitrine pro. Règles proposées pour la V2 : achats uniques, sans abonnement, réservés aux particuliers, valables **30 jours** chacun.
+- **Pack 1** : 8 000 XPF pour **10 annonces supplémentaires**.
+- **Pack 2** : 5 000 XPF pour **5 annonces supplémentaires**, proposé **uniquement après l'achat du pack 1**.
+- Plafond : **20 annonces actives** au total pour un particulier, packs compris. Au-delà, il doit ouvrir une vitrine pro.
+- **[Acquis]** Les packs n'incluent aucun avantage pro (ni vitrine, ni annuaire, ni badge « Pro vérifié », ni présence sur l'accueil) et aucun boost.
+- Prix : les deux packs (13 000 XPF pour 20 annonces) restent supérieurs à la vitrine pro (10 000 XPF pour 20 annonces, avec ses avantages de visibilité), pour que la vitrine reste l'offre la plus avantageuse pour un pro.
+
 **Cycle de vie** : `en attente de validation` → `active` ou `refusée`. Un administrateur valide chaque annonce avant publication [Acquis]. Un refus s'accompagne d'un motif lisible par l'annonceur, de 5 à 500 caractères [Acquis].
 
 **Durée et gestion par l'annonceur [Acquis]** : la gestion doit rester simple, chaque annonce de « Mes annonces » montre son état, sa date de fin et un ou deux boutons clairs.
@@ -149,7 +156,10 @@ Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À c
 - Statuts : `aucun`, `en attente de paiement`, `actif`.
 - Réservé aux particuliers : **un pro ne peut pas booster**.
 - Il reste « en attente de paiement » jusqu'à réception des fonds (5.7).
-- **[À décider]** : nombre de boosts simultanés par catégorie, remboursement.
+- **Places par catégorie [Proposé]** : **3 places** en tête de chaque catégorie. Si plus de 3 annonces sont boostées, elles tournent à tour de rôle dans ces places. Le badge « Boost » reste affiché.
+- **Limite par particulier [Proposé]** : **2 boosts actifs au maximum** à la fois. Au-delà, le particulier attend la fin d'un boost.
+- Prix à revoir après quelques mois de données réelles (taux de remplissage des places, nombre de boosts par particulier, abonnements pro).
+- **[À décider]** : remboursement d'un boost.
 
 ### 5.3 Vitrine pro [Acquis]
 
@@ -325,7 +335,7 @@ Classés par urgence : les premiers bloquent la phase 1. Les choix techniques so
 | 5 | Qui valide les annonces, et sous quel délai ? | Charge d'exploitation |
 | 6 | Passerelle carte (OSB/PayZen ou NiuPay), lieu de remise des espèces, critères des comptes habituels, tarif de la publicité exclusive | Phase 3 |
 | 6 bis | TVA et mentions obligatoires d'une facture, à confirmer avec un expert-comptable | Phase 3 |
-| 7 | Procédure de vérification d'un pro (justificatifs TAHITI) | Phase 3 |
+| 7 | Procédure de vérification d'un pro : liste exacte des documents de la DICP demandés, et comment ils sont envoyés | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |
 | 9 | Niveau de disponibilité visé. Région décidée : us-west-1, Californie (125 ms depuis Tahiti, contre 236 ms pour Séoul et 261 ms pour Sydney) | Coût |
 | 10 | Nom de domaine et exploitant légal du site | Mentions légales, et **bloque l'envoi d'e-mails** (SPF, DKIM de Resend) |
