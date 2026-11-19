@@ -82,6 +82,8 @@ export type LigneAnnonce = Pick<Tables<"listings">, "id" | "titre" | "prix_xpf" 
   categories: Pick<Tables<"categories">, "slug"> | null;
   /** Nombre de clics sur « Voir le numéro », compté par la base. */
   contact_reveals?: { count: number }[];
+  /** Commandes de boost de l'annonce : une commande non payée s'affiche « en attente ». */
+  boosts?: { statut: string }[];
 };
 
 const STATUTS_ANNONCE: readonly StatutAnnonce[] = ["active", "en_attente_validation", "refusee", "retiree", "vendue"];
@@ -148,7 +150,12 @@ export function versSuivi(ligne: LigneAnnonce, maintenant: number): AccountListi
     prixXpf: ligne.prix_xpf,
     categorie: ligne.categories?.slug ?? "",
     statut,
-    boost: boostFin > maintenant ? "actif" : "aucun",
+    boost:
+      boostFin > maintenant
+        ? "actif"
+        : ligne.boosts?.some((b) => b.statut === "en_attente_paiement")
+          ? "en_attente_paiement"
+          : "aucun",
     vues: 0,
     contacts: ligne.contact_reveals?.[0]?.count ?? 0,
     lien: statut === "active" ? `/annonces/${id}` : undefined,

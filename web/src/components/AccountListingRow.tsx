@@ -77,6 +77,13 @@ export function AccountListingRow({ annonce, vitrine }: { annonce: AccountListin
             Voir l&apos;annonce <Icon name="fleche" />
           </Link>
         )}
+        {/* Boost : particuliers seulement, annonce en ligne ; la commande en attente se suit sur la même page */}
+        {!vitrine && (annonce.statut === "active" && annonce.boost === "aucun" || annonce.boost === "en_attente_paiement") && (
+          <Link className="btn btn-secondary btn-petit" href={`/compte/annonces/${annonce.id}/booster`}>
+            <Icon name="boost" />
+            {annonce.boost === "aucun" ? "Booster" : "Suivre le boost"}
+          </Link>
+        )}
         {annonce.gestes.length > 0 && (
           <form action={gererAnnonce} className="boutons">
             <input type="hidden" name="id" value={annonce.id} />

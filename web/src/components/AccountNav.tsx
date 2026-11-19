@@ -23,6 +23,7 @@ export function AccountNav({ admin = false, pro = false }: { admin?: boolean; pr
       ))}
       {admin && <Link href="/admin">Annonces à valider</Link>}
       {admin && <Link href="/admin/vitrines">Vitrines</Link>}
+      {admin && <Link href="/admin/boosts">Boosts</Link>}
       <form action={seDeconnecter}>
         <button type="submit">Se déconnecter</button>
       </form>

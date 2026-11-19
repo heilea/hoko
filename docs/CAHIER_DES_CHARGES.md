@@ -83,7 +83,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Connexion par e-mail + mot de passe | ✅ | Supabase Auth, qui limite les essais. Plus de comptes de démonstration |
 | Tableau de bord, mes annonces, mon profil | 🟡 | Statuts et chiffres d'exemple |
 | Modifier / retirer / marquer « vendue » / republier | ⬜ | [Acquis] V1, règles en 5.1 |
-| Achat d'un boost | ⬜ | Statut « en attente de paiement » déjà modélisé |
+| Achat d'un boost | ✅ | Commande « en attente de paiement » avec numéro, 3 places par catégorie, activation par l'administrateur (page « Boosts ») |
 | Statistiques réelles (vues, contacts) | ⬜ | « Contacts » = numéros révélés |
 | Réinitialisation du mot de passe | ✅ | Lien envoyé par e-mail |
 
@@ -153,13 +153,15 @@ Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À c
 
 ### 5.2 Boost [Acquis]
 
-- Un boost fait remonter l'annonce **en tête de sa catégorie pendant 7 jours**, pour **700 XPF**.
+- Un boost fait remonter l'annonce **en tête de sa catégorie pendant 7 jours**, pour **700 XPF** au lancement.
 - Statuts : `aucun`, `en attente de paiement`, `actif`.
-- Réservé aux particuliers : **un pro ne peut pas booster**.
-- Il reste « en attente de paiement » jusqu'à réception des fonds (5.7).
-- **Places par catégorie [Proposé]** : **3 places** en tête de chaque catégorie. Si plus de 3 annonces sont boostées, elles tournent à tour de rôle dans ces places. Le badge « Boost » reste affiché.
-- **Limite par particulier [Proposé]** : **2 boosts actifs au maximum** à la fois. Au-delà, le particulier attend la fin d'un boost.
-- Prix à revoir après quelques mois de données réelles (taux de remplissage des places, nombre de boosts par particulier, abonnements pro).
+- Réservé aux particuliers : **un pro ne peut pas booster**. Seule une annonce en ligne, sans boost en cours ni en attente, peut être boostée.
+- Il reste « en attente de paiement » jusqu'à réception des fonds (5.7). Les **7 jours commencent à l'activation** par l'administrateur.
+- **Places par catégorie [Acquis]** : **3 boosts au plus** par catégorie, **garantis en tête 100 % du temps**, sans rotation. Une commande en attente de paiement réserve sa place. Quand les 3 places sont prises, le site affiche « Complet » avec la date de la prochaine place libre.
+- **Limite par particulier [Acquis]** : **2 boosts au maximum** à la fois (actifs ou en attente).
+- **Paiement V1 [Acquis]** : la commande porte un numéro (`B-000123`) à mettre en référence ; Hoko contacte le particulier pour le paiement (virement ou espèces). Le particulier peut annuler tant que ce n'est pas payé ; l'administrateur annule une commande qui n'est jamais payée.
+- **Paiement par carte [Visé]** : un virement de 700 XPF ou une remise en espèces sont peu réalistes. Cible : carte bancaire, boost activé automatiquement au retour du paiement. Passerelle à choisir entre OSB (PayZen) et NiuPay, après devis (frais fixes et pourcentage par transaction, abonnement mensuel, conditions d'ouverture). En attendant, commande et activation manuelle.
+- **Prix par catégorie [Acquis]** : le prix est fixé par catégorie dans la base, sans modifier le code (700 XPF partout au lancement). Le prix payé est enregistré sur chaque commande. Chaque tentative tombée sur « Complet » est comptée par catégorie : une catégorie souvent complète justifie une hausse de son prix (attendu : véhicules et immobilier plus chers). Prix revus après quelques mois de données réelles.
 - **[À décider]** : remboursement d'un boost.
 
 ### 5.3 Vitrine pro [Acquis]

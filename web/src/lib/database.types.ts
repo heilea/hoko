@@ -72,6 +72,58 @@ export type Database = {
           },
         ]
       }
+      boost_complets: {
+        Row: {
+          category_id: number
+          created_at: string
+          id: number
+        }
+        Insert: {
+          category_id: number
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          category_id?: number
+          created_at?: string
+          id?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boost_complets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boost_tarifs: {
+        Row: {
+          category_id: number
+          modifie_le: string
+          prix_xpf: number
+        }
+        Insert: {
+          category_id: number
+          modifie_le?: string
+          prix_xpf: number
+        }
+        Update: {
+          category_id?: number
+          modifie_le?: string
+          prix_xpf?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boost_tarifs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: true
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boosts: {
         Row: {
           created_at: string
@@ -483,9 +535,54 @@ export type Database = {
         Args: { annonce_id: number; chemin: string }
         Returns: number
       }
+      annuler_boost: { Args: { boost_id: number }; Returns: undefined }
+      boosts_admin: {
+        Args: never
+        Returns: {
+          annonce_id: number
+          annonce_statut: string
+          categorie: string
+          commande_le: string
+          debut: string
+          email: string
+          fin: string
+          id: number
+          montant_xpf: number
+          statut: string
+          telephone: string
+          titre: string
+          vendeur: string
+        }[]
+      }
+      commander_boost: {
+        Args: { annonce_id: number }
+        Returns: {
+          commande_id: number
+          libre_le: string
+          montant_xpf: number
+          statut: string
+        }[]
+      }
+      decider_boost: {
+        Args: { boost_id: number; geste: string }
+        Returns: undefined
+      }
       decider_vitrine: {
         Args: { geste: string; vitrine_id: string }
         Returns: undefined
+      }
+      etat_boost: {
+        Args: { annonce_id: number }
+        Returns: {
+          commande_fin: string
+          commande_id: number
+          commande_montant: number
+          commande_statut: string
+          libre_le: string
+          places: number
+          places_prises: number
+          prix_xpf: number
+        }[]
       }
       gerer_annonce: {
         Args: { annonce_id: number; geste: string }

@@ -4,7 +4,7 @@
  *
  * À n'appeler que côté serveur, après getSession().
  */
-import { lireStatutVitrine, versSuivi, type Account, type AccountListing, type Vitrine } from "./accounts";
+import { dateCourte, lireStatutVitrine, versSuivi, type Account, type AccountListing, type Vitrine } from "./accounts";
 import { MAX_ANNONCES_PRO } from "./data";
 import { versPhotos, type Photo } from "./photos";
 import type { AnnonceSaisie } from "./validation";
@@ -16,7 +16,7 @@ export async function getAccountListings(compte: Account): Promise<AccountListin
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("listings")
-    .select("id, titre, prix_xpf, statut, boost_jusqu_au, motif_refus, expire_le, categories(slug), contact_reveals(count)")
+    .select("id, titre, prix_xpf, statut, boost_jusqu_au, motif_refus, expire_le, categories(slug), contact_reveals(count), boosts(statut)")
     .eq("user_id", compte.id)
     .order("created_at", { ascending: false });
   if (error || !data) return [];
@@ -56,6 +56,52 @@ export async function getAnnoncePourModifier(
       accord: false,
     },
     photos: versPhotos(data.photos),
+  };
+}
+
+/** Ce que voit le particulier sur la page « Booster » d'une de ses annonces. */
+export type EtatBoostAnnonce = {
+  id: string;
+  titre: string;
+  enLigne: boolean;
+  prixXpf: number;
+  placesPrises: number;
+  places: number;
+  /** Prochaine place libre (« 24 novembre »), si les places sont prises par des boosts actifs. */
+  libreLe?: string;
+  /** Boost en cours ou en attente sur cette annonce. */
+  commande?: { id: number; statut: "en_attente_paiement" | "actif"; finLe?: string; montantXpf: number };
+};
+
+/** Annonce du compte et état du boost dans sa catégorie (fonction `etat_boost` de la base). */
+export async function getEtatBoost(compte: Account, id: string): Promise<EtatBoostAnnonce | null> {
+  if (!/^[1-9]\d{0,17}$/.test(id)) return null;
+  const supabase = await creerClientServeur();
+  if (!supabase) return null;
+  const [{ data: annonce }, { data: etat }] = await Promise.all([
+    supabase.from("listings").select("id, titre, statut, expire_le, shop_id").eq("id", Number(id)).eq("user_id", compte.id).maybeSingle(),
+    supabase.rpc("etat_boost", { annonce_id: Number(id) }),
+  ]);
+  const e = etat?.[0];
+  if (!annonce || annonce.shop_id || !e) return null;
+  // La requête est déjà attendue (voir creerClientServeur) : l'heure courante peut être lue
+  const enLigne = annonce.statut === "active" && (!annonce.expire_le || Date.parse(annonce.expire_le) > Date.now());
+  return {
+    id: String(annonce.id),
+    titre: annonce.titre,
+    enLigne,
+    prixXpf: e.prix_xpf,
+    placesPrises: e.places_prises,
+    places: e.places,
+    libreLe: e.libre_le ? dateCourte(e.libre_le) : undefined,
+    commande: e.commande_id
+      ? {
+          id: e.commande_id,
+          statut: e.commande_statut === "actif" ? "actif" : "en_attente_paiement",
+          finLe: e.commande_fin ? dateCourte(e.commande_fin) : undefined,
+          montantXpf: e.commande_montant,
+        }
+      : undefined,
   };
 }
 
