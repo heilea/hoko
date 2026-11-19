@@ -5,7 +5,7 @@
  *
  * À n'appeler que côté serveur, après avoir vérifié le rôle avec getSession().
  */
-import { lireStatutVitrine, type StatutVitrine } from "./accounts";
+import { dateCourte, lireStatutVitrine, type StatutVitrine } from "./accounts";
 import type { LigneAModerer } from "./moderation";
 import { creerClientServeur } from "./supabase-serveur";
 
@@ -48,6 +48,45 @@ export async function getVitrinesAdmin(): Promise<VitrineAdmin[]> {
     email: v.email ?? "—",
     annoncesEnLigne: v.annonces_en_ligne,
     creeeLe: v.creee_le,
+  }));
+}
+
+/** Un boost vu par l'administrateur : commande en attente de paiement, ou boost actif. */
+export type BoostAdmin = {
+  id: number;
+  statut: "en_attente_paiement" | "actif";
+  montantXpf: number;
+  finLe?: string;
+  commandeLe: string;
+  annonceId: number;
+  titre: string;
+  annonceEnLigne: boolean;
+  categorie: string;
+  vendeur: string;
+  telephone: string;
+  /** Pour contacter le particulier au sujet du paiement. Jamais affiché ailleurs. */
+  email: string;
+};
+
+/** Commandes en attente (les plus anciennes d'abord), puis boosts actifs. La base vérifie le rôle. */
+export async function getBoostsAdmin(): Promise<BoostAdmin[]> {
+  const supabase = await creerClientServeur();
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("boosts_admin");
+  if (error || !data) return [];
+  return data.map((b) => ({
+    id: b.id,
+    statut: b.statut === "actif" ? "actif" : "en_attente_paiement",
+    montantXpf: b.montant_xpf,
+    finLe: b.fin ? dateCourte(b.fin) : undefined,
+    commandeLe: dateCourte(b.commande_le),
+    annonceId: b.annonce_id,
+    titre: b.titre,
+    annonceEnLigne: b.annonce_statut === "active",
+    categorie: b.categorie,
+    vendeur: b.vendeur,
+    telephone: b.telephone ?? "—",
+    email: b.email ?? "—",
   }));
 }
 
