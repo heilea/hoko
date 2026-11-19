@@ -10,17 +10,19 @@ const liens = [
   { href: "/compte/profil", libelle: "Mon profil" },
 ];
 
-/** Menu de l'espace annonceur, avec la page en cours mise en évidence. */
-export function AccountNav({ admin = false }: { admin?: boolean }) {
+/** Menu de l'espace annonceur, avec la page en cours mise en évidence. Un pro a en plus « Ma vitrine ». */
+export function AccountNav({ admin = false, pro = false }: { admin?: boolean; pro?: boolean }) {
   const chemin = usePathname();
+  const tous = pro ? [...liens.slice(0, 2), { href: "/compte/vitrine", libelle: "Ma vitrine" }, ...liens.slice(2)] : liens;
   return (
     <nav className="compte-nav" aria-label="Mon compte">
-      {liens.map((lien) => (
+      {tous.map((lien) => (
         <Link key={lien.href} href={lien.href} aria-current={chemin === lien.href ? "page" : undefined}>
           {lien.libelle}
         </Link>
       ))}
-      {admin && <Link href="/admin">Administration</Link>}
+      {admin && <Link href="/admin">Annonces à valider</Link>}
+      {admin && <Link href="/admin/vitrines">Vitrines</Link>}
       <form action={seDeconnecter}>
         <button type="submit">Se déconnecter</button>
       </form>

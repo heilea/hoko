@@ -29,7 +29,8 @@ function idValide(valeur: unknown): number | null {
 
 export async function ajouterPhoto(annonceId: string, formulaire: FormData): Promise<ResultatPhoto> {
   const compte = await getSession();
-  if (!compte || compte.type !== "particulier") return { erreur: "Connectez-vous avec votre compte pour ajouter des photos." };
+  // Particulier ou pro : la base vérifie que l'annonce est bien celle du compte
+  if (!compte) return { erreur: "Connectez-vous avec votre compte pour ajouter des photos." };
   const annonce = idValide(annonceId);
   const fichier = formulaire.get("photo");
   if (!annonce || !(fichier instanceof File)) return { erreur: "Aucune photo reçue." };

@@ -90,7 +90,8 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 ### 3.3 Côté administrateur 🟡
 
 - ✅ **File de validation des annonces** (`/admin`) : les plus anciennes d'abord ; valider, ou refuser avec un motif que l'annonceur lit dans « Mes annonces ». La base vérifie le rôle d'administrateur à chaque décision et garde qui a décidé et quand.
-- ⬜ Vérification des pros (numéro TAHITI), traitement des signalements, suspension de compte ou de vitrine, gestion des réservations publicitaires, statistiques globales.
+- ✅ Vitrines : badge « Pro vérifié », activation, suspension (5.3).
+- ⬜ Traitement des signalements, suspension de compte, gestion des réservations publicitaires, statistiques globales.
 
 ---
 
@@ -148,7 +149,7 @@ Tahiti, Moorea, Raiatea, Bora Bora, Huahine, Nuku Hiva — liste d'exemple.
 | Modifier le contenu ou les photos | Retour **en attente de validation** ; à la validation, 30 jours repartent |
 | Boost qui dépasse la fin | La fin de l'annonce est repoussée jusqu'à la fin du boost |
 
-Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À confirmer]**. Rappel par e-mail avant expiration : avec Resend. **[À décider]** : durée des annonces pro, qui suivent aujourd'hui leur vitrine.
+Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À confirmer]**. Rappel par e-mail avant expiration : avec Resend. Annonces pro : pas de date de fin, elles suivent leur vitrine (5.3) **[Acquis]**.
 
 ### 5.2 Boost [Acquis]
 
@@ -168,7 +169,13 @@ Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À c
 - Le badge n'est accordé qu'**après contrôle du numéro TAHITI**.
 - Les annonces d'un pro **vivent uniquement dans sa vitrine** : elles n'apparaissent ni dans la recherche ni dans les pages de catégorie.
 - Statuts de vitrine : `active`, `en attente de paiement`, `suspendue`. Pas de période d'essai en V1 : la vitrine s'active à réception de l'abonnement (5.7).
-- **[À décider]** : engagement minimum, résiliation, que devient la vitrine en cas de non-paiement, justificatifs demandés pour la vérification.
+- **[Acquis]** Une vitrine est **en ligne** quand elle est active **et** vérifiée. Sinon rien n'est public : ni la page, ni l'annuaire, ni ses annonces, ni son numéro.
+- **[Acquis]** Les annonces pro **n'ont pas de date de fin** : elles restent en ligne tant que la vitrine l'est. Abonnement non payé : l'administrateur suspend la vitrine, ses annonces partent avec elle.
+- **[Acquis]** Le pro publie avec le même formulaire que le particulier, avec la même validation ; l'annonce va dans sa vitrine. Il peut préparer vitrine et annonces avant la mise en ligne.
+- **[Acquis]** Le pro modifie lui-même secteur, lieu, présentation (1 000 caractères, sans e-mail) et horaires (7 lignes). Le nom de l'entreprise et le numéro TAHITI ne se changent qu'en contactant Hoko. **[Proposé]** Les changements du profil ne repassent pas par la validation.
+- **[Acquis]** Documents de la DICP en V1 : Hoko écrit au pro à l'adresse de son compte et les reçoit par e-mail, sans dépôt sur le site (dépôt en ligne en V2).
+- **[Acquis]** Administration « Vitrines » : numéro TAHITI, e-mail et téléphone du compte, gestes « Pro vérifié », « Activer », « Suspendre ».
+- **[À décider]** : engagement minimum, résiliation, liste exacte des documents de la DICP.
 
 ### 5.4 Contact et protection des données de contact [Acquis]
 

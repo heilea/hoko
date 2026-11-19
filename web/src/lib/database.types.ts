@@ -483,6 +483,10 @@ export type Database = {
         Args: { annonce_id: number; chemin: string }
         Returns: number
       }
+      decider_vitrine: {
+        Args: { geste: string; vitrine_id: string }
+        Returns: undefined
+      }
       gerer_annonce: {
         Args: { annonce_id: number; geste: string }
         Returns: string
@@ -500,6 +504,16 @@ export type Database = {
           ile: string
           prix_xpf: number
           titre: string
+        }
+        Returns: undefined
+      }
+      modifier_vitrine: {
+        Args: {
+          categorie: string
+          commune: string
+          horaires: string[]
+          ile: string
+          presentation: string
         }
         Returns: undefined
       }
@@ -535,6 +549,24 @@ export type Database = {
         }
       }
       supprimer_photo: { Args: { photo_id: number }; Returns: string }
+      vitrines_admin: {
+        Args: never
+        Returns: {
+          annonces_en_ligne: number
+          commune: string
+          creee_le: string
+          email: string
+          id: string
+          ile: string
+          nom: string
+          numero_tahiti: string
+          secteur: string
+          slug: string
+          statut: string
+          telephone: string
+          verifie: boolean
+        }[]
+      }
       voir_numero_annonce: { Args: { annonce_id: number }; Returns: string }
       voir_numero_vitrine: { Args: { vitrine_slug: string }; Returns: string }
     }

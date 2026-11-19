@@ -2,10 +2,9 @@
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { lireGeste, MESSAGE_EN_ATTENTE, peutPublier } from "@/lib/accounts";
-import { getAccountListings } from "@/lib/compte-donnees";
-import { getListingPhone, getProPhone, TAG_ANNONCES } from "@/lib/annonces-donnees";
-import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
+import { lireGeste, maximumAnnonces, MESSAGE_EN_ATTENTE, peutPublier } from "@/lib/accounts";
+import { getAccountListings, getVitrine } from "@/lib/compte-donnees";
+import { getListingPhone, getProPhone, TAG_ANNONCES, TAG_VITRINES } from "@/lib/annonces-donnees";
 import {
   lireEmail,
   validerInscription,
@@ -17,6 +16,7 @@ import { lireDecision, messageErreurModeration, verifierMotifRefus } from "@/lib
 import { fermerSession, getSession } from "@/lib/session";
 import { adresseDuSite, creerClientServeur } from "@/lib/supabase-serveur";
 import { validerAnnonce, type AnnonceSaisie, type ChampAnnonce } from "@/lib/validation";
+import { lireGesteVitrine, validerVitrine, type ChampVitrine, type VitrineSaisie } from "@/lib/vitrine";
 
 const INDISPONIBLE = "Ce service est indisponible pour le moment. Réessayez plus tard.";
 const TROP_D_ESSAIS = "Trop d'essais en peu de temps. Patientez quelques minutes avant de réessayer.";
@@ -198,19 +198,24 @@ export type EtatDepot =
  * avec le statut « en attente de validation ». Elle n'apparaît sur le site qu'après validation
  * par l'administrateur. Le téléphone est celui du compte, gardé dans une table privée.
  *
- * Réservé aux particuliers connectés : les pros publient depuis leur vitrine.
+ * Particulier : l'annonce va dans les catégories. Pro : elle va dans sa vitrine, jamais dans
+ * les catégories (SPEC.md, 4 sexies) ; la base refuse qu'un pro dépose hors de sa vitrine.
  * Les photos partent ensuite une par une (photos-actions.ts), avec l'identifiant renvoyé.
  */
 export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormData): Promise<EtatDepot> {
   const saisie = lireSaisie(formulaire);
 
-  // La page cache le formulaire aux visiteurs et aux pros, mais l'action se protège elle-même
+  // La page cache le formulaire aux visiteurs, mais l'action se protège elle-même
   const compte = await getSession();
-  if (!compte || compte.type !== "particulier") {
-    return { statut: "erreurs", erreurs: {}, saisie, general: "Connectez-vous avec un compte particulier pour publier une annonce." };
+  if (!compte) {
+    return { statut: "erreurs", erreurs: {}, saisie, general: "Connectez-vous pour publier une annonce." };
   }
-  // Un particulier qui a déjà 5 annonces actives ne peut pas en déposer une autre
-  if (!peutPublier(compte, await getAccountListings(compte))) return { statut: "limite", maximum: MAX_ANNONCES_PARTICULIER };
+  const vitrine = await getVitrine(compte);
+  if (compte.type === "pro" && !vitrine) {
+    return { statut: "erreurs", erreurs: {}, saisie, general: "Votre vitrine est introuvable. Contactez Hoko." };
+  }
+  // 5 annonces en ligne au plus pour un particulier, 20 pour une vitrine
+  if (!peutPublier(compte, await getAccountListings(compte))) return { statut: "limite", maximum: maximumAnnonces(compte) };
 
   const resultat = validerAnnonce(saisie);
   if (!resultat.ok) return { statut: "erreurs", erreurs: resultat.erreurs, saisie };
@@ -225,13 +230,15 @@ export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormDa
   // Les règles d'accès de la base imposent l'auteur et le statut « en attente de validation »
   const { data: creee, error } = await supabase.from("listings").insert({
     user_id: compte.id,
+    shop_id: vitrine?.id ?? null,
     category_id: categorie.id,
     titre: annonce.titre,
     description: annonce.description,
     prix_xpf: annonce.prixXpf,
     ile: annonce.ile,
     commune: annonce.commune,
-    vendeur_nom: compte.nom,
+    // Le nom affiché d'une annonce pro est celui de la vitrine
+    vendeur_nom: vitrine?.nom ?? compte.nom,
     statut: "en_attente_validation",
   }).select("id").single();
   if (error || !creee) {
@@ -266,7 +273,7 @@ export async function modifierAnnonce(_precedent: EtatDepot, formulaire: FormDat
   const id = Number(lire(formulaire, "id", 20));
 
   const compte = await getSession();
-  if (!compte || compte.type !== "particulier") {
+  if (!compte) {
     return { statut: "erreurs", erreurs: {}, saisie, general: "Connectez-vous avec votre compte pour modifier cette annonce." };
   }
   if (!Number.isSafeInteger(id) || id <= 0) {
@@ -365,6 +372,75 @@ export async function modererAnnonce(_precedent: EtatModeration, formulaire: For
   updateTag(TAG_ANNONCES);
   // Retour à la file, rechargée sans l'annonce traitée
   redirect(`/admin?fait=${decision}`);
+}
+
+// ───────────────────────── Vitrine d'un pro ─────────────────────────
+
+export type EtatVitrine =
+  | { statut: "initial" }
+  | { statut: "erreurs"; erreurs: Partial<Record<ChampVitrine, string>>; saisie: VitrineSaisie; general?: string };
+
+/**
+ * Le pro modifie le profil de sa vitrine : secteur, lieu, présentation, horaires.
+ * La base vérifie de nouveau tout (fonction `modifier_vitrine`) et ne touche que la vitrine du
+ * compte connecté. Le nom de l'entreprise, le statut et le badge ne changent pas ici.
+ */
+export async function modifierVitrine(_precedent: EtatVitrine, formulaire: FormData): Promise<EtatVitrine> {
+  const saisie: VitrineSaisie = {
+    secteur: lire(formulaire, "secteur", 100),
+    ile: lire(formulaire, "ile", 100),
+    commune: lire(formulaire, "commune", 200),
+    presentation: lire(formulaire, "presentation", 5000),
+    horaires: lire(formulaire, "horaires", 2000),
+  };
+  const compte = await getSession();
+  if (!compte || compte.type !== "pro") {
+    return { statut: "erreurs", erreurs: {}, saisie, general: "Connectez-vous avec votre compte pro pour modifier votre vitrine." };
+  }
+  const resultat = validerVitrine(saisie);
+  if (!resultat.ok) return { statut: "erreurs", erreurs: resultat.erreurs, saisie };
+  const { vitrine } = resultat;
+
+  const supabase = await creerClientServeur();
+  if (!supabase) return { statut: "erreurs", erreurs: {}, saisie, general: INDISPONIBLE };
+  const { error } = await supabase.rpc("modifier_vitrine", {
+    categorie: vitrine.secteur,
+    ile: vitrine.ile,
+    commune: vitrine.commune,
+    presentation: vitrine.presentation,
+    horaires: vitrine.horaires,
+  });
+  if (error) {
+    console.error("Vitrine refusée par la base :", error.code);
+    return { statut: "erreurs", erreurs: {}, saisie, general: "La vitrine n'a pas pu être enregistrée. Réessayez dans quelques minutes." };
+  }
+  // L'annuaire et la page publique de la vitrine relisent aussitôt
+  updateTag(TAG_VITRINES);
+  redirect("/compte/vitrine?fait=1");
+}
+
+/**
+ * Décision de l'administrateur sur une vitrine : badge, activation, suspension.
+ * La base vérifie elle-même le rôle (fonction `decider_vitrine`).
+ */
+export async function deciderVitrine(formulaire: FormData): Promise<void> {
+  const id = lire(formulaire, "id", 40);
+  const geste = lireGesteVitrine(formulaire.get("geste"));
+  const compte = await getSession();
+  if (!compte?.admin) redirect("/connexion");
+  if (!/^[0-9a-f-]{36}$/.test(id) || !geste) redirect("/admin/vitrines?erreur=1");
+
+  const supabase = await creerClientServeur();
+  if (!supabase) redirect("/admin/vitrines?erreur=1");
+  const { error } = await supabase.rpc("decider_vitrine", { vitrine_id: id, geste });
+  if (error) {
+    console.error("Décision sur la vitrine refusée par la base :", error.code);
+    redirect("/admin/vitrines?erreur=1");
+  }
+  // La vitrine et ses annonces apparaissent ou disparaissent aussitôt
+  updateTag(TAG_VITRINES);
+  updateTag(TAG_ANNONCES);
+  redirect(`/admin/vitrines?fait=${geste}`);
 }
 
 // ───────────────────────── Voir le numéro ─────────────────────────
