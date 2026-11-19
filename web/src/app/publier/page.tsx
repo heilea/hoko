@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Icon } from "@/components/Icon";
 import { PublishForm } from "@/components/PublishForm";
-import { peutPublier } from "@/lib/accounts";
+import { maximumAnnonces, peutPublier } from "@/lib/accounts";
 import { getAccountListings } from "@/lib/compte-donnees";
 import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
@@ -74,7 +74,7 @@ export default function PublishPage() {
                   Vous êtes professionnel ?
                 </dt>
                 <dd>
-                  <span>Vos annonces se publient dans votre vitrine, pas ici.</span>
+                  <span>Connecté avec votre compte pro, vos annonces vont dans votre vitrine (20 au plus).</span>
                   <Link className="link" href="/pros#ouvrir">
                     Voir l&apos;offre vitrine
                   </Link>
@@ -111,26 +111,14 @@ async function Depot() {
       </div>
     );
   }
-  if (compte.type === "pro") {
-    return (
-      <div className="avis">
-        <p>
-          <strong>Vos annonces se publient dans votre vitrine.</strong>
-        </p>
-        <p>Les annonces des professionnels ne sont pas mélangées à celles des particuliers.</p>
-        <p>
-          <Link className="link" href="/compte">
-            Aller à mon espace
-          </Link>
-        </p>
-      </div>
-    );
-  }
+  const pro = compte.type === "pro";
   if (!peutPublier(compte, await getAccountListings(compte))) {
     return (
       <div className="avis avis-erreur" role="alert">
         <p>
-          <strong>Vous avez déjà {MAX_ANNONCES_PARTICULIER} annonces actives, le maximum pour un particulier.</strong>
+          <strong>
+            Vous avez déjà {maximumAnnonces(compte)} annonces en ligne, le maximum pour {pro ? "une vitrine" : "un particulier"}.
+          </strong>
         </p>
         <p>
           <Link className="link" href="/compte/annonces">
@@ -140,5 +128,17 @@ async function Depot() {
       </div>
     );
   }
-  return <PublishForm telephone={compte.telephone} />;
+  return (
+    <div className="stack">
+      {pro && (
+        <div className="avis">
+          <p>
+            <strong>Cette annonce ira dans votre vitrine.</strong> Les annonces des professionnels ne sont pas mélangées à
+            celles des particuliers : elles apparaissent sur votre vitrine, sans date de fin.
+          </p>
+        </div>
+      )}
+      <PublishForm telephone={compte.telephone} />
+    </div>
+  );
 }

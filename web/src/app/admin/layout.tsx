@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getSession } from "@/lib/session";
@@ -40,5 +41,20 @@ async function Garde({ children }: { children: React.ReactNode }) {
   const compte = await getSession();
   if (!compte) redirect("/connexion");
   if (!compte.admin) notFound();
-  return <div className="stack">{children}</div>;
+  return (
+    <div className="stack">
+      <nav className="boutons small" aria-label="Administration">
+        <Link className="link" href="/admin">
+          Annonces à valider
+        </Link>
+        <Link className="link" href="/admin/vitrines">
+          Vitrines
+        </Link>
+        <Link className="link" href="/compte">
+          Mon compte
+        </Link>
+      </nav>
+      {children}
+    </div>
+  );
 }

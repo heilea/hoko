@@ -6,6 +6,7 @@ import { LIBELLE_VITRINE, maximumAnnonces, peutPublier, resumer } from "@/lib/ac
 import { getAccountListings, getVitrine } from "@/lib/compte-donnees";
 import { prixXpf } from "@/lib/format";
 import { getSession } from "@/lib/session";
+import { etapesVitrine, vitrineEnLigne } from "@/lib/vitrine";
 
 // Espace privé : la page attend la session côté serveur, sans chercher la navigation instantanée
 export const instant = false;
@@ -16,7 +17,7 @@ export default async function DashboardPage() {
 
   const [annonces, vitrine] = await Promise.all([getAccountListings(compte), getVitrine(compte)]);
   const resume = resumer(annonces);
-  const enLigne = vitrine?.statut === "actif" && vitrine.verifie;
+  const enLigne = vitrine ? vitrineEnLigne(vitrine) : false;
 
   return (
     <>
@@ -39,10 +40,13 @@ export default async function DashboardPage() {
         </div>
         <div>
           <dt>Contacts reçus</dt>
-          <dd>{resume.contacts}</dd>
+          <dd>{resume.contacts + (vitrine?.contacts ?? 0)}</dd>
         </div>
       </dl>
-      <p className="small muted">Les vues et les contacts ne sont pas encore comptés.</p>
+      <p className="small muted">
+        Un contact = un clic sur « Voir le numéro »{vitrine ? ", sur vos annonces et sur votre vitrine" : ""}. Les vues ne sont pas
+        encore comptées.
+      </p>
 
       {vitrine && (
         <div className="carte">
@@ -63,15 +67,23 @@ export default async function DashboardPage() {
           <p className="muted">
             {vitrine.secteur} · {vitrine.commune}, {vitrine.ile}. Abonnement à {prixXpf(10000)} par mois.
           </p>
-          {!vitrine.verifie && <p className="small">Hoko contrôle votre numéro TAHITI avant d&apos;afficher le badge « Pro vérifié ».</p>}
-          {vitrine.statut === "en_attente_paiement" && (
-            <p className="small">Votre vitrine sera visible dès réception du paiement de l&apos;abonnement.</p>
+          {!enLigne && (
+            <ul className="small">
+              {etapesVitrine(vitrine).map((etape) => (
+                <li key={etape}>{etape}</li>
+              ))}
+            </ul>
           )}
-          {enLigne && (
-            <Link className="btn btn-secondary" href={`/pros/${vitrine.slug}`}>
-              Voir ma vitrine publique
+          <div className="boutons">
+            <Link className="btn btn-secondary" href="/compte/vitrine">
+              Modifier ma vitrine
             </Link>
-          )}
+            {enLigne && (
+              <Link className="btn btn-secondary" href={`/pros/${vitrine.slug}`}>
+                Voir ma vitrine publique
+              </Link>
+            )}
+          </div>
         </div>
       )}
 
@@ -87,7 +99,7 @@ export default async function DashboardPage() {
         {annonces.length > 0 ? (
           <ul className="suivis">
             {annonces.slice(0, 3).map((annonce) => (
-              <AccountListingRow key={annonce.id} annonce={annonce} gestes={compte.type === "particulier"} />
+              <AccountListingRow key={annonce.id} annonce={annonce} vitrine={vitrine ? { enLigne } : undefined} />
             ))}
           </ul>
         ) : (
@@ -95,8 +107,7 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {compte.type === "particulier" &&
-        (peutPublier(compte, annonces) ? (
+      {peutPublier(compte, annonces) ? (
           <Link className="btn btn-primary bouton-seul" href="/publier">
             Publier une annonce
           </Link>
@@ -107,7 +118,7 @@ export default async function DashboardPage() {
               retirez-la pour en publier une nouvelle.
             </p>
           </div>
-        ))}
+        )}
     </>
   );
 }

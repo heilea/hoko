@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AccountListingRow } from "@/components/AccountListingRow";
 import { CONFIRMATION_GESTE, DUREE_ANNONCE_JOURS, MESSAGE_EN_ATTENTE, maximumAnnonces, resumer } from "@/lib/accounts";
-import { getAccountListings } from "@/lib/compte-donnees";
-import { MAX_ANNONCES_PARTICULIER } from "@/lib/data";
+import { getAccountListings, getVitrine } from "@/lib/compte-donnees";
 import { prixXpf } from "@/lib/format";
 import { getSession } from "@/lib/session";
+import { vitrineEnLigne } from "@/lib/vitrine";
 
 export const metadata: Metadata = { title: "Mes annonces" };
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Mes annonces" };
 export const instant = false;
 
 const ERREURS: Record<string, string> = {
-  limite: `Vous avez déjà ${MAX_ANNONCES_PARTICULIER} annonces en ligne. Marquez-en une vendue ou retirez-la avant d'en republier une autre.`,
+  limite: "Vous avez atteint le maximum d'annonces en ligne. Marquez-en une vendue ou retirez-la avant d'en remettre une autre en ligne.",
   en_attente: MESSAGE_EN_ATTENTE,
   geste: "Cette action n'est pas possible pour cette annonce. Rechargez la page et réessayez.",
   indisponible: "Ce service est indisponible pour le moment. Réessayez plus tard.",
@@ -25,9 +25,10 @@ export default async function AccountListingsPage({ searchParams }: PageProps<"/
   const compte = await getSession();
   if (!compte) redirect("/connexion");
 
-  const annonces = await getAccountListings(compte);
+  const [annonces, vitrine] = await Promise.all([getAccountListings(compte), getVitrine(compte)]);
   const actives = resumer(annonces).actives;
   const particulier = compte.type === "particulier";
+  const etatVitrine = vitrine ? { enLigne: vitrineEnLigne(vitrine) } : undefined;
 
   return (
     <>
@@ -45,7 +46,7 @@ export default async function AccountListingsPage({ searchParams }: PageProps<"/
       {annonces.length > 0 ? (
         <ul className="suivis">
           {annonces.map((annonce) => (
-            <AccountListingRow key={annonce.id} annonce={annonce} gestes={particulier} />
+            <AccountListingRow key={annonce.id} annonce={annonce} vitrine={etatVitrine} />
           ))}
         </ul>
       ) : (
@@ -72,7 +73,13 @@ export default async function AccountListingsPage({ searchParams }: PageProps<"/
             </p>
           </>
         ) : (
-          <p>Les annonces de votre vitrine se gèrent depuis votre vitrine. Elles ne peuvent pas être boostées.</p>
+          <>
+            <p>
+              Les annonces de votre vitrine n&apos;ont pas de date de fin : elles restent en ligne tant que votre vitrine est en
+              ligne. Elles ne sont pas mélangées aux annonces des particuliers et ne peuvent pas être boostées.
+            </p>
+            <p className="small">Une annonce modifiée est vérifiée de nouveau par Hoko avant de revenir en ligne.</p>
+          </>
         )}
       </div>
     </>

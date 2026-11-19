@@ -14,8 +14,6 @@ export const instant = false;
 export default async function EditListingPage({ params }: PageProps<"/compte/annonces/[id]/modifier">) {
   const compte = await getSession();
   if (!compte) redirect("/connexion");
-  // Les annonces d'une vitrine se gèrent depuis la vitrine
-  if (compte.type !== "particulier") notFound();
 
   const { id } = await params;
   // La base ne renvoie que les annonces du compte connecté

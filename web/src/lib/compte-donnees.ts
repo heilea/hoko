@@ -16,7 +16,7 @@ export async function getAccountListings(compte: Account): Promise<AccountListin
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("listings")
-    .select("id, titre, prix_xpf, statut, boost_jusqu_au, motif_refus, expire_le, categories(slug)")
+    .select("id, titre, prix_xpf, statut, boost_jusqu_au, motif_refus, expire_le, categories(slug), contact_reveals(count)")
     .eq("user_id", compte.id)
     .order("created_at", { ascending: false });
   if (error || !data) return [];
@@ -41,7 +41,6 @@ export async function getAnnoncePourModifier(
     .select("id, titre, description, prix_xpf, ile, commune, categories(slug), photos(id, chemin, ordre)")
     .eq("id", Number(id))
     .eq("user_id", compte.id)
-    .is("shop_id", null)
     .maybeSingle();
   if (!data) return null;
   return {
@@ -68,21 +67,23 @@ export async function getVitrine(compte: Account): Promise<Vitrine | null> {
 
   const { data: vitrine } = await supabase
     .from("shops")
-    .select("id, slug, nom, secteur, ile, commune, presentation, horaires, verifie, statut")
+    .select("id, slug, nom, secteur, ile, commune, presentation, horaires, verifie, statut, categories(slug)")
     .eq("user_id", compte.id)
     .maybeSingle();
   if (!vitrine) return null;
 
-  const { count } = await supabase
-    .from("listings")
-    .select("id", { count: "exact", head: true })
-    .eq("shop_id", vitrine.id)
-    .eq("statut", "active");
+  const [{ count }, { count: contacts }] = await Promise.all([
+    supabase.from("listings").select("id", { count: "exact", head: true }).eq("shop_id", vitrine.id).eq("statut", "active"),
+    // Clics sur « Voir le numéro » de la page de la vitrine (ceux des annonces sont comptés à part)
+    supabase.from("contact_reveals").select("id", { count: "exact", head: true }).eq("shop_id", vitrine.id),
+  ]);
 
   return {
+    id: vitrine.id,
     slug: vitrine.slug,
     nom: vitrine.nom,
     secteur: vitrine.secteur,
+    categorie: vitrine.categories?.slug ?? "",
     ile: vitrine.ile,
     commune: vitrine.commune,
     presentation: vitrine.presentation,
@@ -90,6 +91,7 @@ export async function getVitrine(compte: Account): Promise<Vitrine | null> {
     verifie: Boolean(vitrine.verifie),
     statut: lireStatutVitrine(vitrine.statut),
     annonces: count ?? 0,
+    contacts: contacts ?? 0,
     maximum: MAX_ANNONCES_PRO,
   };
 }

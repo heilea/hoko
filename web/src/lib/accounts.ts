@@ -41,8 +41,9 @@ export type AccountListing = {
   categorie: string;
   statut: StatutAnnonce;
   boost: StatutBoost;
-  /** Les vues et les clics sur « Voir le numéro » ne sont pas encore comptés. */
+  /** Les vues ne sont pas encore comptées. */
   vues: number;
+  /** Clics sur « Voir le numéro » de l'annonce (table `contact_reveals`). */
   contacts: number;
   /** Page publique de l'annonce, si elle est en ligne. */
   lien?: string;
@@ -56,9 +57,13 @@ export type AccountListing = {
 
 /** La vitrine d'un pro, telle qu'il la voit dans son espace. */
 export type Vitrine = {
+  /** Identifiant dans la base : sert au dépôt d'une annonce dans la vitrine. */
+  id: string;
   slug: string;
   nom: string;
   secteur: string;
+  /** Catégorie du secteur (slug), pour le formulaire du profil. */
+  categorie: string;
   ile: string;
   commune: string;
   presentation: string;
@@ -68,11 +73,15 @@ export type Vitrine = {
   statut: StatutVitrine;
   annonces: number;
   maximum: number;
+  /** Clics sur « Voir le numéro » de la page de la vitrine. */
+  contacts: number;
 };
 
 /** Une ligne de la table `listings` (types générés), avec le slug de sa catégorie. */
 export type LigneAnnonce = Pick<Tables<"listings">, "id" | "titre" | "prix_xpf" | "statut" | "boost_jusqu_au" | "motif_refus" | "expire_le"> & {
   categories: Pick<Tables<"categories">, "slug"> | null;
+  /** Nombre de clics sur « Voir le numéro », compté par la base. */
+  contact_reveals?: { count: number }[];
 };
 
 const STATUTS_ANNONCE: readonly StatutAnnonce[] = ["active", "en_attente_validation", "refusee", "retiree", "vendue"];
@@ -141,7 +150,7 @@ export function versSuivi(ligne: LigneAnnonce, maintenant: number): AccountListi
     statut,
     boost: boostFin > maintenant ? "actif" : "aucun",
     vues: 0,
-    contacts: 0,
+    contacts: ligne.contact_reveals?.[0]?.count ?? 0,
     lien: statut === "active" ? `/annonces/${id}` : undefined,
     motif: statut === "refusee" ? (ligne.motif_refus ?? undefined) : undefined,
     finLe: (statut === "active" || statut === "expiree") && ligne.expire_le ? dateCourte(ligne.expire_le) : undefined,

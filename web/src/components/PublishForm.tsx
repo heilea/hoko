@@ -97,7 +97,7 @@ export function PublishForm({ telephone, annonce }: { telephone: string; annonce
       <div className="stack" role="alert">
         <div className="avis avis-erreur">
           <p>
-            <strong>Vous avez déjà {etat.maximum} annonces actives, le maximum pour un particulier.</strong>
+            <strong>Vous avez déjà {etat.maximum} annonces en ligne, le maximum pour votre compte.</strong>
           </p>
           <p>Retirez une annonce pour en publier une nouvelle.</p>
         </div>
@@ -125,8 +125,8 @@ export function PublishForm({ telephone, annonce }: { telephone: string; annonce
             <p>
               <strong>Certaines photos n&apos;ont pas été ajoutées.</strong> Vous pourrez les ajouter depuis « Modifier ».
             </p>
-            {envoi.erreurs.map((message) => (
-              <p key={message} className="small">
+            {envoi.erreurs.map((message, rang) => (
+              <p key={rang} className="small">
                 {message}
               </p>
             ))}

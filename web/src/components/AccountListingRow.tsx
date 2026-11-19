@@ -24,12 +24,19 @@ function etat(annonce: AccountListing): string | null {
 
 /**
  * Une annonce dans l'espace de son propriétaire : état, date de fin, chiffres, et les boutons
- * possibles (marquer vendue, modifier, retirer, republier). `gestes` : faux pour un pro, dont
- * les annonces se gèrent depuis la vitrine.
+ * possibles (marquer vendue, modifier, retirer, republier).
+ *
+ * `vitrine` : pour une annonce de pro, dit si sa vitrine est en ligne. Hors ligne, une annonce
+ * validée n'est pas encore visible du public : pas de lien vers sa page.
  */
-export function AccountListingRow({ annonce, gestes = true }: { annonce: AccountListing; gestes?: boolean }) {
+export function AccountListingRow({ annonce, vitrine }: { annonce: AccountListing; vitrine?: { enLigne: boolean } }) {
   const categorie = getCategory(annonce.categorie);
-  const phrase = etat(annonce);
+  const cachee = vitrine && !vitrine.enLigne && annonce.statut === "active";
+  const phrase = cachee ? "Validée : visible dès que votre vitrine sera en ligne." : etat(annonce);
+  const lien = cachee ? undefined : annonce.lien;
+  // Une annonce de vitrine n'a pas de durée : « Remettre en ligne » plutôt que « Republier 30 jours »
+  const libelle = (geste: Exclude<typeof annonce.gestes[number], "modifier">) =>
+    vitrine && geste === "republier" ? "Remettre en ligne" : LIBELLE_GESTE[geste];
   return (
     <li className="suivi">
       <div className="suivi-corps">
@@ -65,12 +72,12 @@ export function AccountListingRow({ annonce, gestes = true }: { annonce: Account
         </p>
       )}
       <div className="suivi-actions">
-        {annonce.lien && (
-          <Link className="link" href={annonce.lien}>
+        {lien && (
+          <Link className="link" href={lien}>
             Voir l&apos;annonce <Icon name="fleche" />
           </Link>
         )}
-        {gestes && annonce.gestes.length > 0 && (
+        {annonce.gestes.length > 0 && (
           <form action={gererAnnonce} className="boutons">
             <input type="hidden" name="id" value={annonce.id} />
             {annonce.gestes.map((geste, rang) =>
@@ -86,7 +93,7 @@ export function AccountListingRow({ annonce, gestes = true }: { annonce: Account
                   name="geste"
                   value={geste}
                 >
-                  {LIBELLE_GESTE[geste]}
+                  {libelle(geste)}
                 </button>
               ),
             )}
