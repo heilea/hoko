@@ -183,7 +183,7 @@ Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À c
 
 - Le numéro n'est **jamais** présent dans la page : il n'est envoyé qu'au clic sur « Voir le numéro » (action serveur `revealPhone`).
 - Chaque révélation est enregistrée (table `contact_reveals`) : c'est la statistique « contacts reçus ».
-- Une limite de demandes par visiteur doit empêcher le moissonnage des numéros.
+- Une limite de demandes par visiteur empêche le moissonnage des numéros : 20 par heure et par visiteur (cookie signé, car les abonnés mobiles partagent souvent une adresse IP), plafond de 300 par heure et par adresse IP. Seul le serveur demande les numéros à la base ; les traces sont effacées au bout d'une heure.
 - L'e-mail de l'annonceur est privé : il ne sert qu'à la connexion et aux notifications.
 
 ### 5.5 Publicité [Acquis]

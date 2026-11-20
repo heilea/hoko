@@ -4,7 +4,8 @@ import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { lireGeste, maximumAnnonces, MESSAGE_EN_ATTENTE, peutPublier } from "@/lib/accounts";
 import { getAccountListings, getVitrine } from "@/lib/compte-donnees";
-import { getListingPhone, getProPhone, TAG_ANNONCES, TAG_VITRINES } from "@/lib/annonces-donnees";
+import { TAG_ANNONCES, TAG_VITRINES } from "@/lib/annonces-donnees";
+import { demanderNumero, type CibleContact, type ReponseNumero } from "@/lib/numeros";
 import {
   lireEmail,
   validerInscription,
@@ -445,19 +446,16 @@ export async function deciderVitrine(formulaire: FormData): Promise<void> {
 
 // ───────────────────────── Voir le numéro ─────────────────────────
 
-export type CibleContact = { type: "annonce" | "pro"; id: string };
+export type { CibleContact, ReponseNumero };
 
 /**
  * Donne le numéro à appeler quand un visiteur clique sur « Voir le numéro »,
  * sur une annonce ou sur la vitrine d'un pro.
  * Le numéro ne figure jamais dans la page : il n'est envoyé qu'à cette demande.
  *
- * La base compte chaque demande dans `contact_reveals` (statistique « contacts reçus »).
- * À faire avant l'ouverture : limiter le nombre de demandes par visiteur.
+ * La base compte chaque demande (statistique « contacts reçus ») et refuse au-delà de
+ * 20 numéros par heure et par visiteur (voir `@/lib/numeros`).
  */
-export async function revealPhone(cible: CibleContact): Promise<string | null> {
-  if (!cible || typeof cible.id !== "string" || cible.id.length > 60) return null;
-  if (cible.type === "annonce") return getListingPhone(cible.id);
-  if (cible.type === "pro") return getProPhone(cible.id);
-  return null;
+export async function revealPhone(cible: CibleContact): Promise<ReponseNumero> {
+  return demanderNumero(cible);
 }

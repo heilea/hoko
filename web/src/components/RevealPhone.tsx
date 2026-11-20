@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { revealPhone, type CibleContact } from "@/app/actions";
 import { Icon } from "./Icon";
 
-type Etat = { numero: string } | { erreur: true } | null;
+type Etat = { numero: string } | { erreur: "limite" | "autre" } | null;
 
 /**
  * Bouton « Voir le numéro » : le numéro n'est demandé au serveur qu'au clic.
@@ -18,10 +18,10 @@ export function RevealPhone({ cible, nom }: { cible: CibleContact; nom: string }
   function demander() {
     startTransition(async () => {
       try {
-        const numero = await revealPhone(cible);
-        setEtat(numero ? { numero } : { erreur: true });
+        const reponse = await revealPhone(cible);
+        setEtat("numero" in reponse ? { numero: reponse.numero } : { erreur: reponse.erreur === "limite" ? "limite" : "autre" });
       } catch {
-        setEtat({ erreur: true });
+        setEtat({ erreur: "autre" });
       }
     });
   }
@@ -49,7 +49,9 @@ export function RevealPhone({ cible, nom }: { cible: CibleContact; nom: string }
       </button>
       {etat && "erreur" in etat ? (
         <p className="small avis" role="alert">
-          Le numéro n&apos;a pas pu être affiché. Réessayez dans un instant.
+          {etat.erreur === "limite"
+            ? "Vous avez affiché beaucoup de numéros. Réessayez dans une heure."
+            : "Le numéro n'a pas pu être affiché. Réessayez dans un instant."}
         </p>
       ) : (
         <p className="small muted">Appelez ou écrivez directement à {nom}. Aucun compte nécessaire.</p>

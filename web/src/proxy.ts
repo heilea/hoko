@@ -4,14 +4,31 @@
  * Le jeton d'accès d'une session dure une heure. Les composants serveur ne peuvent pas réécrire
  * les cookies : sans ce renouvellement, un annonceur paraîtrait déconnecté au bout d'une heure.
  *
+ * Pose aussi, sur les pages d'annonce et de vitrine, le cookie signé qui reconnaît le visiteur
+ * pour la limite de « Voir le numéro » (voir `lib/visiteur.ts`).
+ *
  * Ce n'est PAS une protection : chaque page et chaque action serveur vérifient elles-mêmes la
  * session (voir `getSession`).
  */
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./lib/database.types";
+import { COOKIE_VISITEUR, creerCookieVisiteur, lireCookieVisiteur, optionsCookieVisiteur, pageAvecNumero } from "./lib/visiteur";
 
 export async function proxy(request: NextRequest) {
+  const reponse = await renouvelerSession(request);
+  await poserCookieVisiteur(request, reponse);
+  return reponse;
+}
+
+async function poserCookieVisiteur(request: NextRequest, reponse: NextResponse) {
+  const secret = process.env.SUPABASE_SECRET_KEY;
+  if (!secret || !pageAvecNumero(request.nextUrl.pathname)) return;
+  if (await lireCookieVisiteur(secret, request.cookies.get(COOKIE_VISITEUR)?.value)) return;
+  reponse.cookies.set(COOKIE_VISITEUR, await creerCookieVisiteur(secret), optionsCookieVisiteur());
+}
+
+async function renouvelerSession(request: NextRequest): Promise<NextResponse> {
   let reponse = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
