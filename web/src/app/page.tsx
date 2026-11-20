@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CategoryNav } from "@/components/CategoryNav";
+import { EspacePub } from "@/components/EspacePub";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
 import { Pagination } from "@/components/Pagination";
@@ -17,17 +18,8 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
     <main>
       <section className="band" aria-label="Publicité">
         <div className="wrap">
-          {/* Espace pub d'accueil : un seul annonceur à la fois, vendu au mois */}
-          <div className="panneau">
-            <span className="label">Publicité · exemple</span>
-            <strong>Votre publicité ici</strong>
-            <p>
-              Le premier espace de la page. <span className="prix">{prixXpf(100000)}</span> par mois.
-            </p>
-            <Link className="btn btn-sombre" href="/publicite">
-              Réserver
-            </Link>
-          </div>
+          {/* Espace pub d'accueil : un seul annonceur à la fois, 30 jours (SPEC.md, 3 ter) */}
+          <EspacePub />
         </div>
       </section>
 

@@ -3,13 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CategoryNav } from "@/components/CategoryNav";
+import { EspacePub } from "@/components/EspacePub";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
 import { Pagination } from "@/components/Pagination";
 import { ProDirectory } from "@/components/ProDirectory";
 import { getCategoryListings } from "@/lib/annonces-donnees";
 import { categories, getCategory } from "@/lib/data";
-import { prixXpf } from "@/lib/format";
 import { lirePage } from "@/lib/pagination";
 
 type Props = PageProps<"/categories/[slug]">;
@@ -77,18 +77,7 @@ async function Categorie({ params, searchParams }: Props) {
                 <p className="muted">{categorie.description}</p>
               </div>
             </div>
-            <div className="panneau panneau-compact">
-              <div>
-                <span className="label">Publicité · exemple</span>
-                <strong>Votre publicité en {categorie.nom}</strong>
-                <p>
-                  L&apos;espace réservé à cette catégorie. <span className="prix">{prixXpf(45000)}</span> par mois.
-                </p>
-              </div>
-              <Link className="btn btn-sombre" href="/publicite">
-                Réserver
-              </Link>
-            </div>
+            <EspacePub categorie={categorie} />
           </header>
         </div>
       </section>
