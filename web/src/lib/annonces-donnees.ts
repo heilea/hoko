@@ -12,21 +12,23 @@ import {
   idAnnonceValide,
   nettoyerRecherche,
   prosDuSecteur,
-  trierParBoost,
   versListing,
   versPro,
   type LigneListing,
 } from "./annonces";
 import type { Listing, Pro } from "./data";
 import { MAX_ANNONCES_PRO } from "./data";
+import { bornes, nombrePages, PAR_PAGE_ACCUEIL, PAR_PAGE_CATEGORIE } from "./pagination";
 import { getSupabase } from "./supabase";
 
 /** Étiquettes de cache : à vider quand les annonces ou les vitrines changent. */
 export const TAG_ANNONCES = "annonces";
 export const TAG_VITRINES = "vitrines";
 
-/** Nombre d'annonces lues au plus par liste, en attendant la pagination (SPEC.md, 4 bis). */
-const LIMITE_LISTE = 100;
+/** Une page d'une liste d'annonces (SPEC.md, 4 bis). `total` compte toutes les pages. */
+export type PageAnnonces = { annonces: Listing[]; total: number; page: number; pages: number };
+
+const PAGE_VIDE: PageAnnonces = { annonces: [], total: 0, page: 1, pages: 1 };
 
 const COLONNES =
   "id, titre, description, prix_xpf, suffixe_prix, ile, commune, vendeur_nom, created_at, boost_jusqu_au, shop_id, categories(slug), shops(slug), photos(id, chemin, ordre)";
@@ -38,27 +40,30 @@ function enAnnonces(lignes: LigneListing[] | null): Listing[] {
 }
 
 /**
- * Annonces de particuliers en ligne, les plus récentes d'abord. Avec une recherche : celles
- * dont le titre, la catégorie, la commune ou l'île contient le texte, accents et majuscules
- * ignorés (fonction `rechercher_annonces` de la base). Les annonces pro n'y figurent jamais.
+ * Annonces de particuliers en ligne, les plus récentes d'abord, 12 par page. Avec une recherche :
+ * celles dont le titre, la catégorie, la commune ou l'île contient le texte, accents et
+ * majuscules ignorés (fonction `rechercher_annonces` de la base). Les annonces pro n'y figurent
+ * jamais. Le boost ne change rien ici : il ne joue que dans la catégorie de l'annonce.
  */
-export async function searchListings(q?: string): Promise<Listing[]> {
+export async function searchListings(q?: string, page = 1): Promise<PageAnnonces> {
   "use cache";
   cacheLife("minutes");
   cacheTag(TAG_ANNONCES);
   const supabase = getSupabase();
-  if (!supabase) return [];
+  if (!supabase) return PAGE_VIDE;
   const recherche = nettoyerRecherche(q);
-  const { data } = recherche
-    ? await supabase.rpc("rechercher_annonces", { recherche }).select(COLONNES)
+  const { debut, fin } = bornes(page, PAR_PAGE_ACCUEIL);
+  const { data, count } = recherche
+    ? await supabase.rpc("rechercher_annonces", { recherche }, { count: "exact" }).select(COLONNES).range(debut, fin)
     : await supabase
         .from("listings")
-        .select(COLONNES)
+        .select(COLONNES, { count: "exact" })
         .eq("statut", "active")
         .is("shop_id", null)
         .order("created_at", { ascending: false })
-        .limit(LIMITE_LISTE);
-  return enAnnonces(data);
+        .range(debut, fin);
+  const total = count ?? 0;
+  return { annonces: enAnnonces(data), total, page, pages: nombrePages(total, PAR_PAGE_ACCUEIL) };
 }
 
 /** Une annonce en ligne par son identifiant, qu'elle soit de particulier ou de pro. */
@@ -72,22 +77,33 @@ export async function getListing(id: string): Promise<Listing | undefined> {
   return enAnnonces(data ? [data] : [])[0];
 }
 
-/** Annonces de particuliers d'une catégorie, boostées en tête puis les plus récentes. */
-export async function getCategoryListings(categorie: string): Promise<Listing[]> {
+/**
+ * Annonces de particuliers d'une catégorie, 20 par page, les plus récentes d'abord. Les annonces
+ * boostées (3 au plus) sont en tête de la page 1 en plus des 20, et ne reviennent pas ensuite.
+ */
+export async function getCategoryListings(categorie: string, page = 1): Promise<PageAnnonces> {
   "use cache";
   cacheLife("minutes");
   cacheTag(TAG_ANNONCES);
   const supabase = getSupabase();
-  if (!supabase) return [];
-  const { data } = await supabase
-    .from("listings")
-    .select(`${COLONNES}, categorie:categories!inner(slug)`)
-    .eq("categorie.slug", categorie)
-    .eq("statut", "active")
-    .is("shop_id", null)
-    .order("created_at", { ascending: false })
-    .limit(LIMITE_LISTE);
-  return trierParBoost(enAnnonces(data));
+  if (!supabase) return PAGE_VIDE;
+  const maintenant = new Date().toISOString();
+  const { debut, fin } = bornes(page, PAR_PAGE_CATEGORIE);
+  const enLigne = () =>
+    supabase
+      .from("listings")
+      .select(`${COLONNES}, categorie:categories!inner(slug)`, { count: "exact" })
+      .eq("categorie.slug", categorie)
+      .eq("statut", "active")
+      .is("shop_id", null)
+      .order("created_at", { ascending: false });
+  const [boostees, autres] = await Promise.all([
+    enLigne().gt("boost_jusqu_au", maintenant).limit(10),
+    enLigne().or(`boost_jusqu_au.is.null,boost_jusqu_au.lte.${maintenant}`).range(debut, fin),
+  ]);
+  const total = (boostees.count ?? 0) + (autres.count ?? 0);
+  const annonces = enAnnonces(page === 1 ? [...(boostees.data ?? []), ...(autres.data ?? [])] : autres.data);
+  return { annonces, total, page, pages: nombrePages(autres.count ?? 0, PAR_PAGE_CATEGORIE) };
 }
 
 /** Annonces d'une vitrine, 20 au plus. */
@@ -117,7 +133,7 @@ export async function getRelatedListings(annonce: Listing, max = 3): Promise<Lis
     return (await getProListings(annonce.shopId)).filter((a) => a.id !== annonce.id).slice(0, max);
   }
   const [memeCategorie, recentes] = await Promise.all([getCategoryListings(annonce.categorie), searchListings()]);
-  return autresAnnonces(annonce, memeCategorie, recentes, max);
+  return autresAnnonces(annonce, memeCategorie.annonces, recentes.annonces, max);
 }
 
 /** Toutes les vitrines en ligne (actives et vérifiées), par ordre alphabétique. */

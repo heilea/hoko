@@ -7,12 +7,12 @@
  * de src/lib/annonces.ts (mise en forme, tri, choix des annonces proposées) et relisent les
  * fonctions SQL des migrations. Le comportement réel de la base a été essayé à part (recherche,
  * « Voir le numéro », règles d'accès).
- * Les tests marqués « todo » décrivent la pagination, décidée mais pas encore construite
- * (SPEC.md, section 4 bis).
+ * La pagination (SPEC.md, section 4 bis) est testée en bas du fichier.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
+import { bornes, lienPage, lirePage, nombrePages, numerosAffiches, PAR_PAGE_ACCUEIL, PAR_PAGE_CATEGORIE } from "../src/lib/pagination";
 import {
   autresAnnonces,
   idAnnonceValide,
@@ -236,14 +236,85 @@ describe("annuaire des pros", () => {
 });
 
 describe("pagination des annonces (SPEC.md, section 4 bis)", () => {
-  test.todo("une page de catégorie affiche au plus 20 annonces");
-  test.todo("?page=2 affiche les annonces suivantes, sans doublon avec la page 1");
-  test.todo("les annonces boostées sont en tête de la page 1 et ne reviennent pas sur les pages suivantes");
-  test.todo("une page au-delà de la dernière affiche « Page introuvable »");
-  test.todo("?page=abc, ?page=0 et ?page=-1 sont traités comme la page 1");
-  test.todo("la recherche garde le mot cherché d'une page à l'autre (?q=pirogue&page=2)");
-  test.todo("l'accueil affiche 10 à 12 annonces par page");
-  test.todo("l'accueil est trié par date de création seulement : une annonce boostée n'y passe pas en tête");
-  test.todo("l'accueil et la recherche n'affichent pas le badge « Boost »");
-  test.todo("les liens « Précédent » et « Suivant » n'apparaissent que s'il y a une page avant ou après");
+  const source = (chemin) => readFileSync(join(import.meta.dirname, "..", "src", ...chemin.split("/")), "utf8");
+  const donnees = source("lib/annonces-donnees.ts");
+  const fonction = (nom) => {
+    const debut = donnees.indexOf(`export async function ${nom}(`);
+    const reste = donnees.slice(debut);
+    return reste.slice(0, reste.search(/\r?\n\}\r?\n/));
+  };
+
+  test("une page de catégorie lit 20 annonces, l'accueil et la recherche 12", () => {
+    expect(PAR_PAGE_CATEGORIE).toBe(20);
+    expect(PAR_PAGE_ACCUEIL).toBe(12);
+    expect(fonction("getCategoryListings")).toContain("bornes(page, PAR_PAGE_CATEGORIE)");
+    expect(fonction("searchListings")).toContain("bornes(page, PAR_PAGE_ACCUEIL)");
+    expect(bornes(1, 20)).toEqual({ debut: 0, fin: 19 });
+  });
+
+  test("?page=2 affiche les annonces suivantes, sans doublon avec la page 1", () => {
+    const p1 = bornes(1, 20);
+    const p2 = bornes(2, 20);
+    expect(p2.debut).toBe(p1.fin + 1);
+    expect(p2).toEqual({ debut: 20, fin: 39 });
+  });
+
+  test("seules les annonces de la page demandée sont lues dans la base", () => {
+    expect(fonction("searchListings").match(/\.range\(debut, fin\)/g)).toHaveLength(2);
+    expect(fonction("getCategoryListings")).toContain(".range(debut, fin)");
+    expect(donnees).not.toContain(".limit(LIMITE_LISTE)");
+  });
+
+  test("les annonces boostées sont en tête de la page 1 et ne reviennent pas sur les pages suivantes", () => {
+    const categorie = fonction("getCategoryListings");
+    expect(categorie).toContain('.gt("boost_jusqu_au", maintenant)');
+    expect(categorie).toContain("boost_jusqu_au.is.null,boost_jusqu_au.lte.");
+    expect(categorie).toContain("page === 1 ? [...(boostees.data ?? []), ...(autres.data ?? [])] : autres.data");
+  });
+
+  test("une page au-delà de la dernière affiche « Page introuvable »", () => {
+    expect(nombrePages(0, 20)).toBe(1);
+    expect(nombrePages(20, 20)).toBe(1);
+    expect(nombrePages(21, 20)).toBe(2);
+    expect(source("app/page.tsx")).toContain("if (page > liste.pages) notFound();");
+    expect(source("app/categories/[slug]/page.tsx")).toContain("if (liste.page > liste.pages) notFound();");
+  });
+
+  test("?page=abc, ?page=0 et ?page=-1 sont traités comme la page 1", () => {
+    for (const piege of ["abc", "0", "-1", "1.5", "", undefined, "99999999", " 2"]) expect(lirePage(piege)).toBe(1);
+    expect(lirePage("3")).toBe(3);
+    expect(lirePage(["4", "5"])).toBe(4);
+  });
+
+  test("la recherche garde le mot cherché d'une page à l'autre (?q=pirogue&page=2)", () => {
+    expect(lienPage("/", 2, "pirogue")).toBe("/?q=pirogue&page=2#annonces");
+    expect(lienPage("/", 1, "pirogue")).toBe("/?q=pirogue#annonces");
+    expect(lienPage("/categories/vehicules", 3)).toBe("/categories/vehicules?page=3#annonces");
+    expect(lienPage("/categories/vehicules", 1)).toBe("/categories/vehicules#annonces");
+  });
+
+  test("l'accueil est trié par date de création seulement : une annonce boostée n'y passe pas en tête", () => {
+    const accueil = fonction("searchListings");
+    expect(accueil).toContain('.order("created_at", { ascending: false })');
+    expect(accueil).not.toContain("boost");
+  });
+
+  test("l'accueil et la recherche n'affichent pas le badge « Boost »", () => {
+    expect(source("app/page.tsx")).toContain("<ListingCard key={annonce.id} annonce={annonce} sansBoost />");
+  });
+
+  test("numéros de page : la première, la dernière et les voisines, « … » pour les trous", () => {
+    expect(numerosAffiches(1, 1)).toEqual([1]);
+    expect(numerosAffiches(1, 3)).toEqual([1, 2, 3]);
+    expect(numerosAffiches(5, 12)).toEqual([1, "…", 4, 5, 6, "…", 12]);
+    expect(numerosAffiches(3, 12)).toEqual([1, 2, 3, 4, "…", 12]);
+    expect(numerosAffiches(12, 12)).toEqual([1, "…", 11, 12]);
+  });
+
+  test("les liens « Précédent » et « Suivant » n'apparaissent que s'il y a une page avant ou après", () => {
+    const composant = source("components/Pagination.tsx");
+    expect(composant).toContain("if (pages <= 1) return null;");
+    expect(composant).toContain("{page > 1 && (");
+    expect(composant).toContain("{page < pages && (");
+  });
 });
