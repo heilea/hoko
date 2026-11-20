@@ -91,7 +91,8 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 - ✅ **File de validation des annonces** (`/admin`) : les plus anciennes d'abord ; valider, ou refuser avec un motif que l'annonceur lit dans « Mes annonces ». La base vérifie le rôle d'administrateur à chaque décision et garde qui a décidé et quand.
 - ✅ Vitrines : badge « Pro vérifié », activation, suspension (5.3).
-- ⬜ Traitement des signalements, suspension de compte, gestion des réservations publicitaires, statistiques globales.
+- ✅ Espaces pub : création, activation, annulation, retrait (5.5).
+- ⬜ Traitement des signalements, suspension de compte, statistiques globales.
 
 ---
 
@@ -188,13 +189,16 @@ Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À c
 
 ### 5.5 Publicité [Acquis]
 
-- Deux espaces, **vendus au mois, payés d'avance**, sans reconduction automatique en V1 :
-  - **page d'accueil** : 100 000 XPF par mois, un seul annonceur à la fois ;
-  - **en-tête d'une catégorie** : 45 000 XPF par mois, même tarif pour toutes les catégories en V1. L'espace est lié à la catégorie : un plombier achète « Plomberie ».
-- Un espace est exclusif (un seul annonceur) ou en rotation (plusieurs annonceurs qui alternent).
-- L'administrateur valide et programme les visuels à la main.
-- La page de réservation (`/publicite`) est un « bientôt disponible ».
-- **[À décider]** : tarif de l'exclusivité par rapport à la rotation, format et poids des visuels, règles sur les contenus acceptés.
+- Deux espaces, **payés d'avance**, sans reconduction automatique en V1 :
+  - **page d'accueil** : 100 000 XPF pour 30 jours ;
+  - **en-tête d'une catégorie** : 45 000 XPF pour 30 jours, même tarif pour toutes les catégories en V1. L'espace est lié à la catégorie : un garage achète « Véhicules ».
+- ✅ **[Acquis] V1 : exclusif seulement**, un annonceur à la fois par emplacement. La rotation attend la V2, quand son prix sera décidé.
+- ✅ **[Acquis] 30 jours à partir de l'activation**, comme le boost : la période commence quand le paiement est reçu.
+- ✅ **[Acquis] Saisie par l'administrateur** (`/admin/pubs`), sans compte annonceur : il crée la pub (annonceur, emplacement, visuel, lien), qui reste « en attente de paiement » avec un numéro de commande `P-000123`, puis l'active à réception des fonds. L'activation est refusée si l'emplacement est occupé. Il peut annuler une commande non payée ou retirer une pub en place.
+- ✅ **[Acquis] Visuel** : JPEG, 4 Mo au plus, bandeau 1600 × 400 px (recadré au centre sinon). Lien `https://` obligatoire, ouvert dans un nouvel onglet et marqué « sponsorisé ». Mention « Publicité » toujours visible.
+- ✅ Prix dans la base (table `pub_tarifs`), modifiables depuis le tableau de bord, recopiés sur chaque commande.
+- ✅ Page `/publicite` : tarifs, emplacements libres ou occupés (avec la date de fin), marche à suivre ; adresse de contact facultative (`CONTACT_EMAIL`).
+- **[À décider]** : tarif de la rotation (V2), règles sur les contenus acceptés.
 
 ### 5.6 Modération [Proposé]
 
@@ -342,7 +346,7 @@ Classés par urgence : les premiers bloquent la phase 1. Les choix techniques so
 | 2 | Îles et catégories couvertes en V1 | Structure des filtres et du SEO |
 | 3 | Nombre de photos par annonce (6 proposé) | Stockage et formulaire |
 | 5 | Qui valide les annonces, et sous quel délai ? | Charge d'exploitation |
-| 6 | Passerelle carte (OSB/PayZen ou NiuPay), lieu de remise des espèces, critères des comptes habituels, tarif de la publicité exclusive | Phase 3 |
+| 6 | Passerelle carte (OSB/PayZen ou NiuPay), lieu de remise des espèces, critères des comptes habituels, tarif de la rotation des pubs (V2) | Phase 3 |
 | 6 bis | TVA et mentions obligatoires d'une facture, à confirmer avec un expert-comptable | Phase 3 |
 | 7 | Procédure de vérification d'un pro : liste exacte des documents de la DICP demandés, et comment ils sont envoyés | Phase 3 |
 | 8 | Cadre juridique et données personnelles | Avant toute ouverture |

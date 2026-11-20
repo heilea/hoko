@@ -452,3 +452,11 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 .page-lien:hover { border-color: var(--marque); }
 .page-active { background: var(--marque); border-color: var(--marque); color: var(--marque-ink); }
 .page-trou { min-width: 24px; text-align: center; color: var(--muted); }
+
+/* Pub en place : le visuel de l'annonceur (bandeau 4:1), avec la mention « Publicité » */
+.pub { position: relative; display: block; border-radius: 12px; overflow: hidden; border: 1px solid #dddddd; }
+.pub img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 1; object-fit: cover; }
+.pub-mention { position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .92); color: #1f1f1f; font-size: 12px; }
+.pub-visuel { display: block; width: 100%; max-width: 640px; height: auto; aspect-ratio: 4 / 1; object-fit: cover; border-radius: 8px; }
+.badge-attente { background: #fff3d6; color: var(--attente); }
+.badge-ok { background: #e3f3e8; color: var(--succes); }

@@ -29,36 +29,42 @@ export type Database = {
         Row: {
           annonceur: string
           category_id: number | null
-          debut: string
+          created_at: string
+          debut: string | null
           emplacement: string
-          fin: string
+          fin: string | null
           id: number
           lien: string | null
           mode: string
+          montant_xpf: number
           statut: string
           visuel: string | null
         }
         Insert: {
           annonceur: string
           category_id?: number | null
-          debut: string
+          created_at?: string
+          debut?: string | null
           emplacement: string
-          fin: string
+          fin?: string | null
           id?: never
           lien?: string | null
           mode?: string
+          montant_xpf?: number
           statut?: string
           visuel?: string | null
         }
         Update: {
           annonceur?: string
           category_id?: number | null
-          debut?: string
+          created_at?: string
+          debut?: string | null
           emplacement?: string
-          fin?: string
+          fin?: string | null
           id?: never
           lien?: string | null
           mode?: string
+          montant_xpf?: number
           statut?: string
           visuel?: string | null
         }
@@ -420,6 +426,24 @@ export type Database = {
         }
         Relationships: []
       }
+      pub_tarifs: {
+        Row: {
+          emplacement: string
+          modifie_le: string
+          prix_xpf: number
+        }
+        Insert: {
+          emplacement: string
+          modifie_le?: string
+          prix_xpf: number
+        }
+        Update: {
+          emplacement?: string
+          modifie_le?: string
+          prix_xpf?: number
+        }
+        Relationships: []
+      }
       purchase_orders: {
         Row: {
           date_emission: string
@@ -584,9 +608,23 @@ export type Database = {
           statut: string
         }[]
       }
+      creer_pub: {
+        Args: {
+          annonceur: string
+          categorie: string
+          emplacement: string
+          lien: string
+          visuel: string
+        }
+        Returns: number
+      }
       decider_boost: {
         Args: { boost_id: number; geste: string }
         Returns: undefined
+      }
+      decider_pub: {
+        Args: { geste: string; pub_id: number }
+        Returns: string
       }
       decider_vitrine: {
         Args: { geste: string; vitrine_id: string }

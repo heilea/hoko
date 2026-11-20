@@ -10,6 +10,7 @@
 import sharp from "sharp";
 import { PHOTO_POIDS_MAX } from "./validation";
 import { COTE_GRANDE, COTE_VIGNETTE } from "./photos";
+import { PUB_HAUTEUR, PUB_LARGEUR } from "./pubs";
 
 export type PhotoTraitee = { grande: Buffer; vignette: Buffer };
 
@@ -47,5 +48,26 @@ export async function traiterPhoto(octets: Uint8Array): Promise<PhotoTraitee | {
     return { grande, vignette };
   } catch {
     return { erreur: "Cette photo est illisible. Essayez avec une autre." };
+  }
+}
+
+/**
+ * Visuel d'une pub (SPEC.md, 3 ter) : mêmes vérifications qu'une photo, puis bandeau
+ * 1600 × 400 recadré au centre, pour que l'emplacement garde toujours la même forme.
+ */
+export async function traiterVisuelPub(octets: Uint8Array): Promise<Buffer | { erreur: string }> {
+  if (octets.length === 0) return { erreur: "Le fichier est vide." };
+  if (octets.length > PHOTO_POIDS_MAX) return { erreur: "Le visuel dépasse 4 Mo." };
+  if (!commeUnJpeg(octets)) return { erreur: "Ce fichier n'est pas une image JPEG." };
+  try {
+    const image = sharp(octets, { failOn: "error", limitInputPixels: 50_000_000 });
+    if ((await image.metadata()).format !== "jpeg") return { erreur: "Ce fichier n'est pas une image JPEG." };
+    return await image
+      .rotate()
+      .resize(PUB_LARGEUR, PUB_HAUTEUR, { fit: "cover", position: "centre" })
+      .jpeg({ quality: 85, mozjpeg: true })
+      .toBuffer();
+  } catch {
+    return { erreur: "Cette image est illisible. Essayez avec une autre." };
   }
 }

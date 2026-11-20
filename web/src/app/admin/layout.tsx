@@ -53,6 +53,9 @@ async function Garde({ children }: { children: React.ReactNode }) {
         <Link className="link" href="/admin/boosts">
           Boosts
         </Link>
+        <Link className="link" href="/admin/pubs">
+          Espaces pub
+        </Link>
         <Link className="link" href="/compte">
           Mon compte
         </Link>
