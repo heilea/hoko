@@ -36,7 +36,7 @@ export type Listing = {
   publiee: string;
   /** Boost actif : l'annonce remonte en tête de sa catégorie pendant 7 jours. */
   boost: boolean;
-  /** Prénom du vendeur, ou nom du pro. Son numéro est servi à part, voir getListingPhone. */
+  /** Prénom du vendeur, ou nom du pro. Son numéro est servi à part, voir `demanderNumero` (lib/numeros.ts). */
   vendeur: string;
   /** Photos dans l'ordre : la première sert de vignette. */
   photos: Photo[];

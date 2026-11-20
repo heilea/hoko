@@ -150,20 +150,3 @@ export async function getPro(slug: string): Promise<Pro | undefined> {
   return (await getVitrines()).find((pro) => pro.slug === slug);
 }
 
-/**
- * Numéro à appeler, donné au clic sur « Voir le numéro » et compté dans la base.
- * Jamais mis en cache : chaque demande est une statistique « contacts reçus ».
- */
-export async function getListingPhone(id: string): Promise<string | null> {
-  const supabase = getSupabase();
-  if (!supabase || !idAnnonceValide(id)) return null;
-  const { data } = await supabase.rpc("voir_numero_annonce", { annonce_id: Number(id) });
-  return data ?? null;
-}
-
-export async function getProPhone(slug: string): Promise<string | null> {
-  const supabase = getSupabase();
-  if (!supabase || !/^[a-z0-9-]{1,80}$/.test(slug)) return null;
-  const { data } = await supabase.rpc("voir_numero_vitrine", { vitrine_slug: slug });
-  return data ?? null;
-}

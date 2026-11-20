@@ -346,6 +346,27 @@ export type Database = {
           },
         ]
       }
+      numero_demandes: {
+        Row: {
+          adresse: string
+          created_at: string
+          id: number
+          visiteur: string
+        }
+        Insert: {
+          adresse: string
+          created_at?: string
+          id?: never
+          visiteur: string
+        }
+        Update: {
+          adresse?: string
+          created_at?: string
+          id?: never
+          visiteur?: string
+        }
+        Relationships: []
+      }
       photos: {
         Row: {
           chemin: string
@@ -664,8 +685,14 @@ export type Database = {
           verifie: boolean
         }[]
       }
-      voir_numero_annonce: { Args: { annonce_id: number }; Returns: string }
-      voir_numero_vitrine: { Args: { vitrine_slug: string }; Returns: string }
+      voir_numero_annonce: {
+        Args: { adresse: string; annonce_id: number; visiteur: string }
+        Returns: string
+      }
+      voir_numero_vitrine: {
+        Args: { adresse: string; visiteur: string; vitrine_slug: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
