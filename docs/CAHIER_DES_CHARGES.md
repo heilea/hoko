@@ -54,8 +54,8 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 
 | Fonction | État | Règle |
 |---|---|---|
-| Accueil : recherche, catégories, annonces de particuliers, pros mis en avant | 🟡 | Lu dans la base, trié par date de création (les plus récentes d'abord), sans boost. Pas encore de pagination : jusqu'à 100 annonces d'un coup (voir 3.1.1)
-| Pages de catégorie | ✅ | Les annonces boostées passent en tête |
+| Accueil : recherche, catégories, annonces de particuliers, pros mis en avant | ✅ | Lu dans la base, trié par date de création (les plus récentes d'abord), sans boost. 12 annonces par page (3.1.1, 5.9)
+| Pages de catégorie | ✅ | Les annonces boostées passent en tête de la page 1. 20 annonces par page (5.9) |
 | Recherche par mot-clé | ✅ | Insensible aux accents et à la casse. Ne renvoie **pas** les annonces pro |
 | Page d'annonce | 🟡 | Titre, prix, description, lieu, date, vendeur, annonces similaires. Photos : emplacement vide tant que l'envoi n'existe pas |
 | Bouton « Voir le numéro » | ✅ | Numéro servi à la demande (5.4) |
@@ -68,7 +68,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 #### 3.1.1 Annonces de l'accueil [Acquis]
 
 - **Tri** : de la plus récente à la plus ancienne, sur une vraie date de publication enregistrée en base (le champ texte `publiee`, du type « hier », est remplacé par une date, et le libellé est calculé à l'affichage).
-- **Limite** : 10 à 12 annonces par page (nombre exact à fixer à la construction), avec la pagination décrite en 5.9. Aujourd'hui tout s'affiche d'un coup.
+- **Limite** : 12 annonces par page, avec la pagination décrite en 5.9.
 - **Boost** : aucun boost sur l'accueil. Il n'en change pas l'ordre, trié uniquement par date de création, et le badge « Boost » n'y est pas affiché, recherche comprise. Une annonce boostée ne passe en tête, avec son badge, que dans sa catégorie.
 - **Exclusions** : les annonces pro n'y figurent pas, comme dans la recherche et les catégories ; les annonces `en attente de validation`, `refusée`, `vendue` ou `expirée` n'y figurent pas non plus.
 - **Recherche** : le tri par date s'applique aussi aux résultats, sauf si un tri par pertinence est choisi plus tard.
@@ -230,9 +230,9 @@ Gratuite, réservée aux annonceurs : un acheteur n'a pas besoin de compte.
 
 **[À décider]** : confirmation de l'e-mail par un lien, conditions d'utilisation à accepter.
 
-### 5.9 Pagination des listes [Acquis, pas encore construite]
+### 5.9 Pagination des listes [Acquis, construite]
 
-Pages numérotées dans l'adresse (`?page=2`), 20 annonces par page [À confirmer], annonces boostées en tête de la première page de leur catégorie seulement, pas de défilement infini. L'accueil affiche 10 à 12 annonces par page, triées par date de création (3.1.1).
+Pages numérotées dans l'adresse (`?page=2`, recherche gardée : `?q=pirogue&page=2`), liens « Précédent », « 1 2 3 … », « Suivant ». Catégorie : 20 annonces par page [À confirmer], plus les annonces boostées en tête de la première page seulement. Accueil et recherche : 12 annonces par page, triées par date de création (3.1.1). Pas de défilement infini. Seules les annonces de la page demandée sont lues dans la base. Une page au-delà de la dernière affiche « Page introuvable ».
 
 ---
 

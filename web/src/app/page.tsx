@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CategoryNav } from "@/components/CategoryNav";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
+import { Pagination } from "@/components/Pagination";
 import { ProDirectory } from "@/components/ProDirectory";
 import { searchListings } from "@/lib/annonces-donnees";
 import { prixXpf } from "@/lib/format";
+import { lirePage } from "@/lib/pagination";
 
 type Recherche = PageProps<"/">["searchParams"];
 
@@ -66,9 +69,9 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
 }
 
 async function AnnoncesRecherchees({ searchParams }: { searchParams: Recherche }) {
-  const { q } = await searchParams;
+  const { q, page } = await searchParams;
   const recherche = (Array.isArray(q) ? q[0] : q)?.trim();
-  return <Annonces q={recherche} />;
+  return <Annonces q={recherche} page={lirePage(page)} />;
 }
 
 /** En attendant la recherche : le titre est là, mais pas encore d'annonces non filtrées. */
@@ -85,9 +88,14 @@ function AnnoncesChargement() {
   );
 }
 
-/** Liste des annonces de particuliers, filtrée par la recherche s'il y en a une. */
-async function Annonces({ q }: { q?: string }) {
-  const annonces = await searchListings(q);
+/**
+ * Liste des annonces de particuliers, filtrée par la recherche s'il y en a une, 12 par page.
+ * Triée par date seulement : pas de boost sur l'accueil (SPEC.md, 4 bis).
+ */
+async function Annonces({ q, page }: { q?: string; page: number }) {
+  const liste = await searchListings(q, page);
+  if (page > liste.pages) notFound();
+  const annonces = liste.annonces;
 
   return (
     <div className="stack" id="annonces">
@@ -95,16 +103,19 @@ async function Annonces({ q }: { q?: string }) {
         <h2>{q ? `Résultats pour « ${q} »` : "Annonces de particuliers"}</h2>
         {q && (
           <span className="small muted">
-            {annonces.length} {annonces.length > 1 ? "annonces" : "annonce"}
+            {liste.total} {liste.total > 1 ? "annonces" : "annonce"}
           </span>
         )}
       </div>
       {annonces.length > 0 ? (
-        <div className="liste">
-          {annonces.map((annonce) => (
-            <ListingCard key={annonce.id} annonce={annonce} sansBoost />
-          ))}
-        </div>
+        <>
+          <div className="liste">
+            {annonces.map((annonce) => (
+              <ListingCard key={annonce.id} annonce={annonce} sansBoost />
+            ))}
+          </div>
+          <Pagination chemin="/" page={liste.page} pages={liste.pages} q={q} />
+        </>
       ) : (
         <div className="empty">
           <p>

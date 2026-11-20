@@ -5,10 +5,12 @@ import { Suspense } from "react";
 import { CategoryNav } from "@/components/CategoryNav";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
+import { Pagination } from "@/components/Pagination";
 import { ProDirectory } from "@/components/ProDirectory";
 import { getCategoryListings } from "@/lib/annonces-donnees";
 import { categories, getCategory } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
+import { lirePage } from "@/lib/pagination";
 
 type Props = PageProps<"/categories/[slug]">;
 
@@ -24,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: categorie.nom, description: categorie.description };
 }
 
-export default function CategoryPage({ params }: Props) {
+export default function CategoryPage({ params, searchParams }: Props) {
   return (
     <main>
       {/* Le nom de la catégorie vient de l'URL : il est lu sous un Suspense pour garder la navigation instantanée */}
@@ -39,18 +41,20 @@ export default function CategoryPage({ params }: Props) {
           </section>
         }
       >
-        <Categorie params={params} />
+        <Categorie params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function Categorie({ params }: Pick<Props, "params">) {
-  const { slug } = await params;
+async function Categorie({ params, searchParams }: Props) {
+  const [{ slug }, { page: pageDemandee }] = await Promise.all([params, searchParams]);
   const categorie = getCategory(slug);
   if (!categorie) notFound();
 
-  const annonces = await getCategoryListings(categorie.slug);
+  const liste = await getCategoryListings(categorie.slug, lirePage(pageDemandee));
+  if (liste.page > liste.pages) notFound();
+  const annonces = liste.annonces;
 
   return (
     <>
@@ -95,15 +99,18 @@ async function Categorie({ params }: Pick<Props, "params">) {
             <div className="section-head">
               <h2>Annonces de particuliers</h2>
               <span className="small muted">
-                {annonces.length} {annonces.length > 1 ? "annonces" : "annonce"}
+                {liste.total} {liste.total > 1 ? "annonces" : "annonce"}
               </span>
             </div>
             {annonces.length > 0 ? (
-              <div className="liste">
-                {annonces.map((annonce) => (
-                  <ListingCard key={annonce.id} annonce={annonce} />
-                ))}
-              </div>
+              <>
+                <div className="liste">
+                  {annonces.map((annonce) => (
+                    <ListingCard key={annonce.id} annonce={annonce} />
+                  ))}
+                </div>
+                <Pagination chemin={`/categories/${categorie.slug}`} page={liste.page} pages={liste.pages} />
+              </>
             ) : (
               <div className="empty">
                 <p>

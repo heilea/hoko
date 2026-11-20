@@ -445,3 +445,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* Pagination des listes d'annonces : liens « Précédent », numéros, « Suivant » */
+.pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.page-lien { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--ink); text-decoration: none; font-weight: 500; }
+.page-lien:hover { border-color: var(--marque); }
+.page-active { background: var(--marque); border-color: var(--marque); color: var(--marque-ink); }
+.page-trou { min-width: 24px; text-align: center; color: var(--muted); }
