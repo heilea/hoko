@@ -460,3 +460,16 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 .pub-visuel { display: block; width: 100%; max-width: 640px; height: auto; aspect-ratio: 4 / 1; object-fit: cover; border-radius: 8px; }
 .badge-attente { background: #fff3d6; color: var(--attente); }
 .badge-ok { background: #e3f3e8; color: var(--succes); }
+
+/* Signaler une annonce : lien discret sous le contact, petit formulaire */
+.lien-discret { background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; font: inherit; }
+.lien-discret.small { font-size: 14px; line-height: 20px; }
+.lien-discret:hover { color: var(--ink); }
+.signaler { gap: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+.signaler .choix { display: grid; gap: 6px; }
+.signaler .choix label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.signaler .choix input { width: 18px; height: 18px; margin: 0; accent-color: var(--marque); }
+.signaler .champ textarea { min-height: 72px; }
+.signaler .boutons { align-items: center; }
+.signalement-motifs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.signalement-details { display: grid; gap: 6px; margin: 0; padding-left: 18px; }

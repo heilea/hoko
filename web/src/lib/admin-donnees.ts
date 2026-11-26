@@ -7,6 +7,7 @@
  */
 import { dateCourte, lireStatutVitrine, type StatutVitrine } from "./accounts";
 import type { LigneAModerer } from "./moderation";
+import { regrouperSignalements, type AnnonceSignalee } from "./signalements";
 import { creerClientServeur } from "./supabase-serveur";
 
 /** Une vitrine vue par l'administrateur, avec les coordonnées privées du compte. */
@@ -111,4 +112,21 @@ export async function getAnnoncesEnAttente(): Promise<{ annonces: LigneAModerer[
   if (error || !data) return { annonces: [], total: 0, maintenant: 0 };
   // La requête est déjà attendue (voir creerClientServeur) : l'heure courante peut être lue
   return { annonces: data, total: count ?? data.length, maintenant: Date.now() };
+}
+
+/**
+ * Signalements ouverts, regroupés par annonce, les plus signalées d'abord (SPEC.md, 4 septies).
+ * La règle d'accès de `signalements` ne montre rien à un autre compte que l'administrateur.
+ */
+export async function getSignalementsOuverts(): Promise<AnnonceSignalee[]> {
+  const supabase = await creerClientServeur();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("signalements")
+    .select("listing_id, motif, details, created_at, listings(titre, vendeur_nom, statut, expire_le)")
+    .eq("statut", "ouvert")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error || !data) return [];
+  return regrouperSignalements(data, Date.now());
 }

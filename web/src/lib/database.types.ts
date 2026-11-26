@@ -571,6 +571,53 @@ export type Database = {
           },
         ]
       }
+      signalements: {
+        Row: {
+          adresse: string
+          created_at: string
+          details: string | null
+          id: number
+          listing_id: number
+          motif: string
+          statut: string
+          traite_le: string | null
+          traite_par: string | null
+          visiteur: string
+        }
+        Insert: {
+          adresse: string
+          created_at?: string
+          details?: string | null
+          id?: never
+          listing_id: number
+          motif: string
+          statut?: string
+          traite_le?: string | null
+          traite_par?: string | null
+          visiteur: string
+        }
+        Update: {
+          adresse?: string
+          created_at?: string
+          details?: string | null
+          id?: never
+          listing_id?: number
+          motif?: string
+          statut?: string
+          traite_le?: string | null
+          traite_par?: string | null
+          visiteur?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signalements_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -704,7 +751,21 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      signaler_annonce: {
+        Args: {
+          adresse: string
+          annonce_id: number
+          details: string
+          motif: string
+          visiteur: string
+        }
+        Returns: undefined
+      }
       supprimer_photo: { Args: { photo_id: number }; Returns: string }
+      traiter_signalements: {
+        Args: { annonce_id: number; geste: string; motif?: string }
+        Returns: undefined
+      }
       vitrines_admin: {
         Args: never
         Returns: {
