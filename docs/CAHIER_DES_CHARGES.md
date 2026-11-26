@@ -63,7 +63,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Vitrine d'un pro | ✅ | Présentation, horaires, téléphone, annonces |
 | Liste et recherche par île | 🟡 | [Acquis] V1. Aujourd'hui, le nom de l'île est seulement reconnu dans la recherche par mot-clé |
 | Filtres avancés (prix, tri) | ⬜ | [Proposé] V1.1 |
-| Signaler une annonce | ⬜ | [Proposé] V1 : indispensable dès que le trafic grandit |
+| Signaler une annonce | ✅ | Sans compte, motif à choisir ; une fois par annonce et par visiteur, 5 par heure (5.6) |
 
 #### 3.1.1 Annonces de l'accueil [Acquis]
 
@@ -92,7 +92,8 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 - ✅ **File de validation des annonces** (`/admin`) : les plus anciennes d'abord ; valider, ou refuser avec un motif que l'annonceur lit dans « Mes annonces ». La base vérifie le rôle d'administrateur à chaque décision et garde qui a décidé et quand.
 - ✅ Vitrines : badge « Pro vérifié », activation, suspension (5.3).
 - ✅ Espaces pub : création, activation, annulation, retrait (5.5).
-- ⬜ Traitement des signalements, suspension de compte, statistiques globales.
+- ✅ Signalements (`/admin/signalements`) : annonces signalées, les plus signalées d'abord ; retirer l'annonce avec un motif lu par l'annonceur, ou classer sans suite (5.6).
+- ⬜ Suspension de compte, statistiques globales.
 
 ---
 
@@ -202,7 +203,9 @@ Les photos d'une annonce terminée sont effacées 30 jours après la fin **[À c
 
 ### 5.6 Modération [Proposé]
 
-Contenus interdits à lister (armes, produits illicites, annonces trompeuses, etc.), signalement par les visiteurs, délai de traitement visé (par exemple 48 h), sanctions graduées (retrait, avertissement, suspension).
+- ✅ **Signalement par les visiteurs**, sans compte : bouton « Signaler cette annonce » sous le contact. Motifs : arnaque ou fraude, article interdit, annonce en double ou spam, mauvaise catégorie, autre (précision obligatoire). Un visiteur signale une même annonce une seule fois ; 5 signalements par heure au plus par visiteur, 50 par adresse IP.
+- L'annonce reste en ligne jusqu'à la décision de l'administrateur (pas de retrait automatique, pour qu'un concurrent ne puisse pas faire tomber une annonce). Délai de traitement visé : 48 h.
+- **[À décider]** : liste des contenus interdits (armes, produits illicites, annonces trompeuses, etc.), sanctions graduées (avertissement, suspension de compte), signalement d'une vitrine.
 
 ### 5.7 Paiement et activation [Acquis]
 

@@ -6,6 +6,7 @@ import { Galerie } from "@/components/Galerie";
 import { Icon } from "@/components/Icon";
 import { ListingCard } from "@/components/ListingCard";
 import { RevealPhone } from "@/components/RevealPhone";
+import { SignalerAnnonce } from "@/components/SignalerAnnonce";
 import { getListing, getPro, getRelatedListings } from "@/lib/annonces-donnees";
 import { getCategory } from "@/lib/data";
 import { prixXpf, sigle } from "@/lib/format";
@@ -150,6 +151,7 @@ async function Fiche({ params }: Pick<Props, "params">) {
                   Voir la vitrine
                 </Link>
               )}
+              <SignalerAnnonce annonceId={annonce.id} />
             </aside>
           </div>
         </div>

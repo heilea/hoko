@@ -86,9 +86,13 @@ describe("« Voir le numéro » : règles de la base", () => {
   });
 
   test("le client à clé secrète ne vit que côté serveur", () => {
-    const numeros = readFileSync(join(import.meta.dirname, "..", "src", "lib", "numeros.ts"), "utf8");
-    expect(numeros).toContain("process.env.SUPABASE_SECRET_KEY");
-    expect(numeros).not.toContain("use client");
-    expect(numeros).not.toContain("NEXT_PUBLIC_SUPABASE_SECRET");
+    const lire = (nom) => readFileSync(join(import.meta.dirname, "..", "src", "lib", nom), "utf8");
+    const serveur = lire("visiteur-serveur.ts");
+    expect(serveur).toContain("process.env.SUPABASE_SECRET_KEY");
+    expect(lire("numeros.ts")).toContain('from "./visiteur-serveur"');
+    for (const nom of ["visiteur-serveur.ts", "numeros.ts", "signaler.ts"]) {
+      expect(lire(nom)).not.toContain("use client");
+      expect(lire(nom)).not.toContain("NEXT_PUBLIC_SUPABASE_SECRET");
+    }
   });
 });
