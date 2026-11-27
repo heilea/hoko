@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { modifierAnnonce, soumettreAnnonce, type EtatDepot } from "@/app/actions";
 import { ajouterPhoto } from "@/app/photos-actions";
+import { PiegeRobots } from "@/components/PiegeRobots";
 import { categories } from "@/lib/data";
 import {
   DESCRIPTION_MAX,
@@ -290,6 +291,7 @@ export function PublishForm({ telephone, annonce }: { telephone: string; annonce
           Envoi des photos : {envoi.faites + 1} sur {envoi.total}… Gardez cette page ouverte.
         </p>
       )}
+      <PiegeRobots />
     </form>
   );
 }

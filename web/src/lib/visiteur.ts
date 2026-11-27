@@ -49,7 +49,7 @@ function egales(a: string, b: string): boolean {
 }
 
 /** Empreinte envoyée à la base (32 caractères) : on ne peut pas remonter à la valeur d'origine. */
-export async function empreinte(secret: string, genre: "visiteur" | "adresse", valeur: string): Promise<string> {
+export async function empreinte(secret: string, genre: "visiteur" | "adresse" | "email", valeur: string): Promise<string> {
   return (await hmac(secret, `${genre}:${valeur}`)).slice(0, 32);
 }
 

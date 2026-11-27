@@ -80,7 +80,7 @@ Légende : ✅ présent dans le MVP (avec données d'exemple) · 🟡 maquette o
 | Dépôt d'annonce | ✅ | Réservé aux particuliers connectés. L'annonce est enregistrée « en attente de validation », avec le téléphone du compte, puis ses photos (6 au plus) partent une par une |
 | Photos | ✅ | Stockage Supabase. Ajout, suppression et choix de la vignette depuis « Modifier » ; une photo ajoutée renvoie l'annonce à la validation. L'administrateur voit les photos avant de valider |
 | Inscription | ✅ | Particulier ou pro (5.8), avec Supabase Auth et confirmation de l'adresse par e-mail. La vitrine d'un pro est créée « en attente de paiement » |
-| Connexion par e-mail + mot de passe | ✅ | Supabase Auth, qui limite les essais. Plus de comptes de démonstration |
+| Connexion par e-mail + mot de passe | ✅ | Supabase Auth. 10 essais ratés en 15 minutes au plus par e-mail, 50 par adresse IP. Plus de comptes de démonstration |
 | Tableau de bord, mes annonces, mon profil | 🟡 | Statuts et chiffres d'exemple |
 | Modifier / retirer / marquer « vendue » / republier | ⬜ | [Acquis] V1, règles en 5.1 |
 | Achat d'un boost | ✅ | Commande « en attente de paiement » avec numéro, 3 places par catégorie, activation par l'administrateur (page « Boosts ») |
@@ -263,10 +263,15 @@ Pages numérotées dans l'adresse (`?page=2`, recherche gardée : `?q=pirogue&pa
 
 - **Mots de passe** : gérés par Supabase Auth, qui les hache. Jamais en clair. Les comptes de démonstration ont été retirés.
 - **Session** : cookie `httpOnly`, `sameSite=lax`, `secure` en production, signé avec `SESSION_SECRET`. **Sans cette variable, la connexion est désactivée en production** [Acquis].
-- **Connexion** : même message d'erreur pour e-mail inconnu et mot de passe faux [Acquis] ; **limite d'essais à ajouter**.
+- **Connexion** ✅ : même message d'erreur pour e-mail inconnu et mot de passe faux. Après 10 mots de passe faux en 15 minutes sur un même e-mail, la connexion à ce compte attend la fin des 15 minutes ; une connexion réussie remet le compteur à zéro. Plafond de 50 essais ratés en 15 minutes par adresse IP (les abonnés mobiles partagent souvent une adresse).
 - **Envoi de photos** ✅ : le serveur vérifie le type réel du fichier (pas seulement l'extension), retire toutes les métadonnées (position GPS, modèle du téléphone) et réduit l'image (1 600 px, vignette 480 px) avec la bibliothèque sharp, puis la stocke dans Supabase Storage. Seul le serveur dépose et efface dans le stockage (clé secrète, jamais envoyée au navigateur) : un compte ne peut pas y déposer de fichier lui-même. Une photo par requête, pour rester sous la limite d'envoi de Vercel (4,5 Mo). Les adresses des fichiers sont publiques mais impossibles à deviner ; elles ne sont données que par les pages qui montrent l'annonce. **[À faire]** : effacer les photos 30 jours après la fin d'une annonce.
 - **Validation** : toujours côté serveur ; échapper tout texte saisi par les utilisateurs.
-- **Anti-abus** : limite de dépôts par compte et par jour, limite de révélations de numéro, protection anti-robots sur l'inscription et le dépôt.
+- **Anti-abus** ✅ :
+  - inscription et mot de passe oublié : 3 demandes par heure au plus par e-mail, 20 par adresse IP ;
+  - piège à robots invisible sur l'inscription, le mot de passe oublié et le dépôt : un champ caché que seuls les robots remplissent, et 3 secondes au moins entre l'ouverture du formulaire et l'envoi. Rien à cocher pour les gens ; Cloudflare Turnstile pourra s'ajouter si des robots passent ;
+  - dépôt : pas de limite par jour, la limite de 5 annonces en attente de validation (20 pour une vitrine) suffit ;
+  - limite de révélations de numéro (section 5) et de signalements ;
+  - seules des empreintes de l'e-mail et de l'adresse IP sont gardées, effacées au bout d'une heure ; seul le serveur compte les essais.
 - **Secrets** : uniquement dans les variables d'environnement, jamais dans le dépôt.
 
 ### 7.2 Données personnelles [À valider avec un juriste]
@@ -292,7 +297,7 @@ Hoko traite des noms, numéros de téléphone et e-mails de résidents polynési
 | Sujet | Choix |
 |---|---|
 | Base de données | **[Acquis]** Supabase (PostgreSQL). Branché, projet en us-west-1 (Californie). Formule payante obligatoire en production (la formule gratuite se met en pause). Sécurité par ligne (RLS) active : chaque annonceur ne voit que ses annonces |
-| Authentification | **[Acquis]** Supabase Auth. Remplace `session.ts`, `session-token.ts` et les comptes de démonstration de `accounts.ts`, via `@supabase/ssr`. Prévoir la limite d'essais de connexion, un service SMTP pour les e-mails de production et la compatibilité avec Next.js 16 |
+| Authentification | **[Acquis]** Supabase Auth. Remplace `session.ts`, `session-token.ts` et les comptes de démonstration de `accounts.ts`, via `@supabase/ssr`. Limite d'essais de connexion faite. Prévoir un service SMTP pour les e-mails de production et la compatibilité avec Next.js 16 |
 | Stockage des photos | **[Acquis]** Supabase Storage. Règles d'accès par bucket ; le retrait des métadonnées GPS et le redimensionnement restent à écrire (le redimensionnement automatique dépend de la formule) |
 | Paiement | Voir 5.7. Passerelle carte **[À décider]** : OSB/PayZen ou NiuPay |
 | Hébergement du site | **[Acquis]** Vercel. Prix lié au trafic ; la formule gratuite interdit l'usage commercial. Au plus près de Supabase (San Francisco), choisie après mesure de la latence depuis Tahiti (côte ouest des États-Unis ou Sydney) |

@@ -13,6 +13,8 @@ import {
   type ChampInscription,
   type InscriptionRenvoyee,
 } from "@/lib/inscription";
+import { formulaireDeRobot, MESSAGE_ROBOT, MESSAGES_LIMITE } from "@/lib/essais";
+import { controlerEssai, oublierEssais } from "@/lib/essais-serveur";
 import { lireDecision, messageErreurModeration, verifierMotifRefus } from "@/lib/moderation";
 import { fermerSession, getSession } from "@/lib/session";
 import { adresseDuSite, creerClientServeur } from "@/lib/supabase-serveur";
@@ -41,7 +43,8 @@ export type EtatConnexion = { erreur?: string; email?: string };
 
 /**
  * Connexion d'un annonceur. Le message est le même que l'e-mail soit inconnu ou le mot de
- * passe faux, pour ne pas révéler quels comptes existent. Supabase limite les essais.
+ * passe faux, pour ne pas révéler quels comptes existent. 10 essais ratés en 15 minutes au plus
+ * par e-mail, 50 par adresse IP (SPEC.md, section 4 octies).
  */
 export async function seConnecter(_precedent: EtatConnexion, formulaire: FormData): Promise<EtatConnexion> {
   const email = lire(formulaire, "email", 200);
@@ -50,15 +53,19 @@ export async function seConnecter(_precedent: EtatConnexion, formulaire: FormDat
   if (!email.trim() || !motDePasse) return { erreur: "Saisissez votre e-mail et votre mot de passe.", email };
   const supabase = await creerClientServeur();
   if (!supabase) return { erreur: INDISPONIBLE, email };
+  if ((await controlerEssai("connexion", email, false)) === "limite") return { erreur: MESSAGES_LIMITE.connexion, email };
 
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: motDePasse });
   if (error) {
     if (tropDEssais(error)) return { erreur: TROP_D_ESSAIS, email };
+    // Seul un essai raté compte (mot de passe faux, e-mail inconnu ou non confirmé)
+    await controlerEssai("connexion", email, true);
     if (error.code === "email_not_confirmed") {
       return { erreur: "Confirmez d'abord votre adresse : cliquez sur le lien reçu par e-mail à l'inscription.", email };
     }
     return { erreur: "E-mail ou mot de passe incorrect.", email };
   }
+  await oublierEssais("connexion", email);
   redirect("/compte");
 }
 
@@ -95,6 +102,7 @@ export async function sInscrire(_precedent: EtatInscription, formulaire: FormDat
   };
   const motDePasse = lire(formulaire, "motDePasse");
   const resultat = validerInscription({ ...saisie, motDePasse, confirmation: lire(formulaire, "confirmation") });
+  if (formulaireDeRobot(formulaire)) return { statut: "erreurs", erreurs: {}, saisie, general: MESSAGE_ROBOT };
   if (!resultat.ok) return { statut: "erreurs", erreurs: resultat.erreurs, saisie };
 
   const supabase = await creerClientServeur();
@@ -102,6 +110,10 @@ export async function sInscrire(_precedent: EtatInscription, formulaire: FormDat
   if (!supabase || !site) return { statut: "erreurs", erreurs: {}, saisie, general: INDISPONIBLE };
 
   const { compte } = resultat;
+  // 3 inscriptions par heure au plus par e-mail, 20 par adresse IP
+  if ((await controlerEssai("inscription", compte.email, true)) === "limite") {
+    return { statut: "erreurs", erreurs: {}, saisie, general: MESSAGES_LIMITE.inscription };
+  }
   const { data, error } = await supabase.auth.signUp({
     email: compte.email,
     password: motDePasse,
@@ -145,11 +157,16 @@ export async function demanderNouveauMotDePasse(
 ): Promise<EtatMotDePasseOublie> {
   const saisie = lire(formulaire, "email", 200);
   const email = lireEmail(saisie);
+  if (formulaireDeRobot(formulaire)) return { statut: "initial", erreur: MESSAGE_ROBOT, email: saisie };
   if (!email) return { statut: "initial", erreur: "Saisissez l'e-mail de votre compte. Exemple : prenom@exemple.pf.", email: saisie };
 
   const supabase = await creerClientServeur();
   const site = adresseDuSite();
   if (!supabase || !site) return { statut: "initial", erreur: INDISPONIBLE, email: saisie };
+  // 3 demandes par heure au plus par e-mail, 20 par adresse IP
+  if ((await controlerEssai("mot_de_passe", email, true)) === "limite") {
+    return { statut: "initial", erreur: MESSAGES_LIMITE.mot_de_passe, email: saisie };
+  }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${site}/auth/confirmation?suite=/mot-de-passe/nouveau`,
@@ -205,6 +222,7 @@ export type EtatDepot =
  */
 export async function soumettreAnnonce(_precedent: EtatDepot, formulaire: FormData): Promise<EtatDepot> {
   const saisie = lireSaisie(formulaire);
+  if (formulaireDeRobot(formulaire)) return { statut: "erreurs", erreurs: {}, saisie, general: MESSAGE_ROBOT };
 
   // La page cache le formulaire aux visiteurs, mais l'action se protège elle-même
   const compte = await getSession();

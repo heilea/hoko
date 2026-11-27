@@ -464,6 +464,8 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 /* Signaler une annonce : lien discret sous le contact, petit formulaire */
 .lien-discret { background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; font: inherit; }
 .lien-discret.small { font-size: 14px; line-height: 20px; }
+/* Piège à robots (PiegeRobots) : hors de l'écran, pas display:none que certains robots détectent */
+.piege { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
 .lien-discret:hover { color: var(--ink); }
 .signaler { gap: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
 .signaler .choix { display: grid; gap: 6px; }
