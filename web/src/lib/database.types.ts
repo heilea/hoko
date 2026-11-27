@@ -257,6 +257,30 @@ export type Database = {
           },
         ]
       }
+      essais: {
+        Row: {
+          adresse: string
+          cle: string
+          created_at: string
+          genre: string
+          id: number
+        }
+        Insert: {
+          adresse: string
+          cle: string
+          created_at?: string
+          genre: string
+          id?: never
+        }
+        Update: {
+          adresse?: string
+          cle?: string
+          created_at?: string
+          genre?: string
+          id?: never
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
           boost_jusqu_au: string | null
@@ -655,6 +679,15 @@ export type Database = {
           statut: string
         }[]
       }
+      controler_essai: {
+        Args: {
+          adresse_essai: string
+          cle_essai: string
+          genre_essai: string
+          noter: boolean
+        }
+        Returns: string
+      }
       creer_pub: {
         Args: {
           annonceur: string
@@ -718,6 +751,10 @@ export type Database = {
           ile: string
           presentation: string
         }
+        Returns: undefined
+      }
+      oublier_essais: {
+        Args: { cle_essai: string; genre_essai: string }
         Returns: undefined
       }
       photo_en_premier: { Args: { photo_id: number }; Returns: undefined }

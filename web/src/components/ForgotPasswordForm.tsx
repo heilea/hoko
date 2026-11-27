@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { demanderNouveauMotDePasse, type EtatMotDePasseOublie } from "@/app/actions";
+import { PiegeRobots } from "@/components/PiegeRobots";
 
 const initial: EtatMotDePasseOublie = { statut: "initial" };
 
@@ -33,6 +34,7 @@ export function ForgotPasswordForm() {
         <label htmlFor="email">E-mail du compte</label>
         <input id="email" name="email" type="email" inputMode="email" autoComplete="email" defaultValue={etat.email} required />
       </div>
+      <PiegeRobots />
       <button className="btn btn-primary" type="submit" disabled={enCours}>
         {enCours ? "Envoi…" : "Recevoir le lien"}
       </button>

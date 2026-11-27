@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { sInscrire, type EtatInscription } from "@/app/actions";
+import { PiegeRobots } from "@/components/PiegeRobots";
 import { categories } from "@/lib/data";
 import { prixXpf } from "@/lib/format";
 import { MOT_DE_PASSE_MIN, NOM_MAX, NUMERO_TAHITI_MAX, type ChampInscription, type TypeCompte } from "@/lib/inscription";
@@ -194,6 +195,7 @@ export function SignupForm() {
       <button className="btn btn-primary" type="submit" disabled={enCours}>
         {enCours ? "Vérification…" : "Créer mon compte"}
       </button>
+      <PiegeRobots />
     </form>
   );
 }
